@@ -1,0 +1,129 @@
+/* pages/home/home.wxss */
+.brand-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  padding: 40rpx;
+  border-radius: var(--border-radius);
+  margin-bottom: 30rpx;
+  color: white;
+  text-align: center;
+}
+
+.brand-title {
+  font-size: 48rpx;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.slogan {
+  font-size: 24rpx;
+  font-style: italic;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.motto {
+  font-size: 22rpx;
+  opacity: 0.8;
+  display: block;
+}
+
+.user-info-card {
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.status-text {
+  font-size: 24rpx;
+}
+
+.status-text.activated {
+  color: #4caf50;
+}
+
+.status-text.inactive {
+  color: #ff9800;
+}
+
+.points-display {
+  text-align: center;
+  padding: 20rpx;
+  background: var(--primary-color);
+  border-radius: var(--border-radius);
+  color: white;
+}
+
+.points-number {
+  font-size: 36rpx;
+  font-weight: bold;
+  display: block;
+}
+
+.points-label {
+  font-size: 20rpx;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.action-item {
+  background: white;
+  padding: 30rpx 20rpx;
+  border-radius: var(--border-radius);
+  text-align: center;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s;
+}
+
+.action-item:active {
+  transform: scale(0.95);
+}
+
+.action-icon {
+  font-size: 48rpx;
+  margin-bottom: 12rpx;
+}
+
+.card-header {
+  padding: 20rpx 30rpx;
+  font-weight: 600;
+  border-bottom: 1rpx solid var(--border-color);
+}
+
+.announcements {
+  padding: 30rpx;
+}
+
+.announcement {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+}
+
+.announcement-title {
+  flex: 1;
+  font-size: 28rpx;
+}
+
+.announcement-time {
+  font-size: 22rpx;
+  color: var(--text-secondary);
+}

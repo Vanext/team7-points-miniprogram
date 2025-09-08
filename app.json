@@ -1,0 +1,46 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/upload/upload",
+    "pages/profile/profile",
+    "pages/leaderboard/leaderboard",
+    "pages/store/store"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#1a237e",
+    "navigationBarTitleText": "Team 7 积分系统",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#1a237e",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "🏠 首页"
+      },
+      {
+        "pagePath": "pages/upload/upload", 
+        "text": "📤 上传"
+      },
+      {
+        "pagePath": "pages/leaderboard/leaderboard",
+        "text": "🏆 排行"
+      },
+      {
+        "pagePath": "pages/store/store",
+        "text": "🛍️ 商城"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "👤 我的"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "cloud": true
+}

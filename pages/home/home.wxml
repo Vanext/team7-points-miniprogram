@@ -1,0 +1,60 @@
+<!--pages/home/home.wxml-->
+<view class="container">
+  <!-- 品牌头部 -->
+  <view class="brand-header">
+    <view class="brand-info">
+      <text class="brand-title">TEAM 7</text>
+      <text class="slogan">From zero to hero</text>
+      <text class="motto">一群人，一件事，一7拼，一定赢</text>
+    </view>
+  </view>
+
+  <!-- 用户信息 -->
+  <view class="card user-info-card">
+    <view class="user-section">
+      <view class="user-details">
+        <view class="user-name">{{userInfo.nickName || '未登录'}}</view>
+        <view class="user-status">
+          <text class="status-text {{userInfo.isActivated ? 'activated' : 'inactive'}}">
+            {{userInfo.isActivated ? '已激活' : '未激活'}}
+          </text>
+        </view>
+      </view>
+      <view class="points-display">
+        <text class="points-number">{{userInfo.totalPoints || 0}}</text>
+        <text class="points-label">积分</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷功能 -->
+  <view class="action-grid">
+    <view class="action-item" bindtap="navigateToUpload">
+      <view class="action-icon">📤</view>
+      <text>上传积分</text>
+    </view>
+    <view class="action-item" bindtap="navigateToStore">
+      <view class="action-icon">🛍️</view>
+      <text>积分商城</text>
+    </view>
+    <view class="action-item">
+      <view class="action-icon">🏆</view>
+      <text>排行榜</text>
+    </view>
+    <view class="action-item">
+      <view class="action-icon">👤</view>
+      <text>个人中心</text>
+    </view>
+  </view>
+
+  <!-- 公告栏 -->
+  <view class="card" wx:if="{{announcements.length > 0}}">
+    <view class="card-header">📢 俱乐部公告</view>
+    <view class="announcements">
+      <view class="announcement" wx:for="{{announcements}}" wx:key="id">
+        <text class="announcement-title">{{item.title}}</text>
+        <text class="announcement-time">{{item.createTime}}</text>
+      </view>
+    </view>
+  </view>
+</view>
