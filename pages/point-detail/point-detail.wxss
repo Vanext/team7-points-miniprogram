@@ -1,0 +1,87 @@
+/* pages/point-detail/point-detail.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f7f7f7;
+  min-height: 100vh;
+}
+
+.loading-container, .empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 200rpx;
+  color: #888;
+}
+
+.loading-spinner {
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid #dcdcdc;
+  border-top-color: #888;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-icon {
+  width: 128rpx;
+  height: 128rpx;
+  margin-bottom: 20rpx;
+}
+
+.record-list {
+  width: 100%;
+}
+
+.record-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  padding: 30rpx 20rpx;
+  border-radius: 10rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.05);
+}
+
+.record-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.record-reason {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.record-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.record-points {
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.points-gain {
+  color: #4caf50;
+}
+
+.points-loss {
+  color: #f44336;
+}
+
+.loading-more {
+  text-align: center;
+  padding: 20rpx;
+  color: #888;
+}

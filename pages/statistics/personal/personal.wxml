@@ -1,0 +1,134 @@
+<!--个人统计页面-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view class="loading-wrapper" wx:if="{{loading}}">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <view wx:else>
+    <!-- 用户信息卡片 -->
+    <view class="user-card">
+      <view class="user-info">
+        <image class="avatar" src="{{user.avatarUrl}}" mode="aspectFill"></image>
+        <view class="user-details">
+          <text class="nickname">{{user.nickname}}</text>
+          <view class="admin-badge" wx:if="{{user.isAdmin}}">管理员</view>
+        </view>
+      </view>
+      <view class="points-display">
+        <text class="points-number">{{user.totalPoints}}</text>
+        <text class="points-label">总积分</text>
+      </view>
+    </view>
+
+    <!-- 时间范围选择 -->
+    <view class="time-range-selector">
+      <view class="range-item {{timeRange === item.value ? 'active' : ''}}" 
+            wx:for="{{timeRanges}}" wx:key="value"
+            data-range="{{item.value}}" bindtap="onTimeRangeChange">
+        <text class="range-text">{{item.label}}</text>
+      </view>
+    </view>
+
+    <!-- 统计概览 -->
+    <view class="stats-overview">
+      <view class="stat-item" bindtap="goToPointDetail">
+        <text class="stat-number">{{summary.earnedPoints}}</text>
+        <text class="stat-label">获得积分</text>
+        <text class="stat-icon">📈</text>
+      </view>
+      <view class="stat-item" bindtap="goToExchangeHistory">
+        <text class="stat-number">{{summary.spentPoints}}</text>
+        <text class="stat-label">消费积分</text>
+        <text class="stat-icon">💰</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{summary.activeDays}}</text>
+        <text class="stat-label">活跃天数</text>
+        <text class="stat-icon">📅</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-number">{{summary.totalRecords}}</text>
+        <text class="stat-label">积分记录</text>
+        <text class="stat-icon">📝</text>
+      </view>
+    </view>
+
+    <!-- 积分趋势图表 -->
+    <view class="chart-section">
+      <view class="section-header">
+        <text class="section-title">积分趋势</text>
+        <text class="section-subtitle">{{currentTimeRangeLabel}}积分变化</text>
+      </view>
+      <view class="chart-container">
+        <canvas 
+          class="chart-canvas" 
+          canvas-id="trendChart"
+          bindinit="{{trendChart.onInit}}"
+          disable-scroll="true">
+        </canvas>
+      </view>
+    </view>
+
+    <!-- 活动类型分布 -->
+    <view class="chart-section" wx:if="{{Object.keys(activityTypes).length > 0}}">
+      <view class="section-header">
+        <text class="section-title">活动类型分布</text>
+        <text class="section-subtitle">各类活动积分占比</text>
+      </view>
+      <view class="chart-container">
+        <canvas 
+          class="chart-canvas" 
+          canvas-id="activityChart"
+          bindinit="{{activityChart.onInit}}"
+          disable-scroll="true">
+        </canvas>
+      </view>
+      
+      <!-- 活动类型列表 -->
+      <view class="activity-list">
+        <view class="activity-item" wx:for="{{Object.entries(activityTypes)}}" wx:key="index">
+          <view class="activity-info">
+            <text class="activity-icon">{{getActivityIcon(item[0])}}</text>
+            <text class="activity-name">{{item[0]}}</text>
+          </view>
+          <text class="activity-points">{{item[1]}}分</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 兑换统计 -->
+    <view class="exchange-section" wx:if="{{exchangeStats.total > 0}}">
+      <view class="section-header">
+        <text class="section-title">兑换统计</text>
+        <text class="section-subtitle">{{currentTimeRangeLabel}}兑换情况</text>
+      </view>
+      
+      <view class="exchange-stats">
+        <view class="exchange-stat-item">
+          <text class="stat-number">{{exchangeStats.total}}</text>
+          <text class="stat-label">总兑换</text>
+        </view>
+        <view class="exchange-stat-item">
+          <text class="stat-number">{{exchangeStats.completed}}</text>
+          <text class="stat-label">已完成</text>
+        </view>
+        <view class="exchange-stat-item">
+          <text class="stat-number">{{exchangeStats.pending}}</text>
+          <text class="stat-label">待处理</text>
+        </view>
+        <view class="exchange-stat-item">
+          <text class="stat-number">{{exchangeStats.totalPoints}}</text>
+          <text class="stat-label">消费积分</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && summary.totalRecords === 0}}">
+      <view class="empty-icon">📊</view>
+      <text class="empty-text">暂无统计数据</text>
+      <text class="empty-subtitle">开始参与活动获得积分吧！</text>
+    </view>
+  </view>
+</view>

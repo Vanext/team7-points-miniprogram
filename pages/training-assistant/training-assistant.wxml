@@ -1,0 +1,248 @@
+<view class="container">
+  <!-- 顶部次级导航：游泳/骑行/跑步 -->
+  <view class="subnav">
+    <view class="subnav-item {{currentSub === 'swim' ? 'active' : ''}}" bindtap="switchSub" data-sub="swim">游泳</view>
+    <view class="subnav-item {{currentSub === 'bike' ? 'active' : ''}}" bindtap="switchSub" data-sub="bike">骑行</view>
+    <view class="subnav-item {{currentSub === 'run' ? 'active' : ''}}" bindtap="switchSub" data-sub="run">跑步</view>
+  </view>
+
+  <!-- 时间标注与提示 -->
+  <view class="timeline">
+    <view class="dot"></view>
+    <text class="date-text">{{today}} · 训练阈值计算</text>
+  </view>
+
+  <!-- 游泳：CSS -->
+  <view class="card" wx:if="{{currentSub==='swim'}}">
+    <view class="card-title">{{swimMethodIndex==0 ? 'CSS（200/400m 测试）' : '阈值（1000m TT）'}}</view>
+    <view class="input-group">
+      <text class="label">阈值方法</text>
+      <picker mode="selector" range="{{swimMethodOptions}}" value="{{swimMethodIndex}}" bindchange="onSwimMethodChange">
+        <view class="picker-display"><text>{{swimMethodOptions[swimMethodIndex]}}</text><text class="arrow">▼</text></view>
+      </picker>
+    </view>
+    <view class="input-group" wx:if="{{swimMethodIndex==0}}">
+      <text class="label">200m 成绩</text>
+      <view class="time-row">
+        <input class="time-input" type="number" placeholder="分" value="{{swimT200M}}" bindinput="onSwimT200M"/>
+        <text class="time-sep">分</text>
+        <input class="time-input" type="number" placeholder="秒" value="{{swimT200S}}" bindinput="onSwimT200S"/>
+        <text class="time-sep">秒</text>
+      </view>
+    </view>
+    <view class="input-group" wx:if="{{swimMethodIndex==0}}">
+      <text class="label">400m 成绩</text>
+      <view class="time-row">
+        <input class="time-input" type="number" placeholder="分" value="{{swimT400M}}" bindinput="onSwimT400M"/>
+        <text class="time-sep">分</text>
+        <input class="time-input" type="number" placeholder="秒" value="{{swimT400S}}" bindinput="onSwimT400S"/>
+        <text class="time-sep">秒</text>
+      </view>
+    </view>
+    <view class="input-group" wx:if="{{swimMethodIndex==1}}">
+      <text class="label">1000m 成绩</text>
+      <view class="time-row">
+        <input class="time-input" type="number" placeholder="分" value="{{swimT1000M}}" bindinput="onSwimT1000M"/>
+        <text class="time-sep">分</text>
+        <input class="time-input" type="number" placeholder="秒" value="{{swimT1000S}}" bindinput="onSwimT1000S"/>
+        <text class="time-sep">秒</text>
+      </view>
+    </view>
+    <view class="actions">
+      <button class="btn-primary" bindtap="calculateSwim">计算阈值</button>
+      <button class="btn-secondary" bindtap="resetSwim" wx:if="{{swimCalculated}}">重置</button>
+    </view>
+    <view class="zones" wx:if="{{swimCalculated}}">
+      <view class="threshold-header">
+        <text class="threshold-title">阈值配速</text>
+        <text class="threshold-value">{{swimPace100}} /100m</text>
+      </view>
+      <view class="zone-list">
+        <view class="zone-item" wx:for="{{swimZones}}" wx:key="index">
+          <text class="zone-name">{{item.name}}</text>
+          <text class="zone-range">{{item.range}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 游泳预测成绩（CSS锚定法 + 条件修正） -->
+    <view class="zones" wx:if="{{swimCalculated}}">
+      <view class="zone-header">
+        <text class="zone-title">预测比赛成绩</text>
+        <text class="zone-value"></text>
+      </view>
+      <view class="input-group">
+        <text class="label">水平档位</text>
+        <picker range="{{swimPredLevels}}" value="{{swimPredLevelIndex}}" bindchange="onSwimPredLevelChange">
+          <view class="picker-display"><text>{{swimPredLevels[swimPredLevelIndex]}}</text><text class="arrow">▼</text></view>
+        </picker>
+      </view>
+      <view class="input-row">
+        <view class="switch-row"><text class="slabel">防寒泳衣</text><switch checked="{{swimThermalSuit}}" bindchange="onSwimThermalSuit"/></view>
+        <view class="switch-row"><text class="slabel">跟游</text><switch checked="{{swimDrafting}}" bindchange="onSwimDrafting"/></view>
+      </view>
+      <view class="input-group">
+        <text class="label">水况</text>
+        <picker range="{{swimWaterOptions}}" value="{{swimWaterIndex}}" bindchange="onSwimWaterChange">
+          <view class="picker-display"><text>{{swimWaterOptions[swimWaterIndex]}}</text><text class="arrow">▼</text></view>
+        </picker>
+      </view>
+      <view class="zone-list">
+        <view class="pred-item" wx:for="{{swimPredItems}}" wx:key="name">
+          <text class="pred-name">{{item.name}}</text>
+          <text class="pred-time">{{item.time}}</text>
+          <text class="pred-pace">{{item.pace}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 骑行：FTP → LT1/LT2 与区间 -->
+  <view class="card" wx:if="{{currentSub==='bike'}}">
+    <view class="card-title">FTP 阈值</view>
+    <view class="input-group">
+      <text class="label">FTP（w） <text style="font-size:22rpx;color:#999;">（20分钟FTP测试推算）</text></text>
+      <input class="input" type="number" placeholder="如 285" value="{{bikeFTP}}" bindinput="onBikeFTP"/>
+    </view>
+    <view class="actions">
+      <button class="btn-primary" bindtap="calculateBike" style="height: 70rpx; display: block; box-sizing: border-box; left: 0rpx; top: 0rpx">计算区间</button>
+      <button class="btn-secondary" bindtap="resetBike" wx:if="{{bikeCalculated}}">重置</button>
+    </view>
+    <view class="zones" wx:if="{{bikeCalculated}}">
+      <view class="threshold-header">
+        <text class="threshold-title">FTP</text>
+        <text class="threshold-value">{{bikeFTP}} w</text>
+      </view>
+      <view class="zone-list">
+        <block wx:for="{{bikeZones}}" wx:key="index">
+          <view wx:if="{{item.sep}}" class="lt-sep">
+            <view class="lt-line"></view>
+            <text class="lt-label">{{item.label}}</text>
+            <view class="lt-line"></view>
+          </view>
+          <view wx:else class="zone-item">
+            <text class="zone-name">{{item.name}}</text>
+            <text class="zone-range">{{item.range}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 骑行速度预测（铁三距离） -->
+    <view class="zones" wx:if="{{bikeCalculated}}">
+      <view class="zone-header">
+        <text class="zone-title">铁三距离预估（基于 FTP）</text>
+        <text class="zone-value"></text>
+      </view>
+      <!-- IF 可编辑 -->
+      <view class="input-row" style="margin-bottom: 8rpx;">
+        <text class="slabel">20km IF</text>
+        <slider min="60" max="100" step="1" value="{{bikeIFValue.d20}}" bindchange="onBikeIFChange" data-key="d20" style="flex:1"/>
+        <text class="slabel">{{bikeIFPct.d20}}</text>
+      </view>
+      <view class="input-row" style="margin-bottom: 8rpx;">
+        <text class="slabel">40km IF</text>
+        <slider min="60" max="100" step="1" value="{{bikeIFValue.d40}}" bindchange="onBikeIFChange" data-key="d40" style="flex:1"/>
+        <text class="slabel">{{bikeIFPct.d40}}</text>
+      </view>
+      <view class="input-row" style="margin-bottom: 8rpx;">
+        <text class="slabel">90km IF</text>
+        <slider min="60" max="100" step="1" value="{{bikeIFValue.d90}}" bindchange="onBikeIFChange" data-key="d90" style="flex:1"/>
+        <text class="slabel">{{bikeIFPct.d90}}</text>
+      </view>
+      <view class="input-row" style="margin-bottom: 12rpx;">
+        <text class="slabel">180km IF</text>
+        <slider min="60" max="100" step="1" value="{{bikeIFValue.d180}}" bindchange="onBikeIFChange" data-key="d180" style="flex:1"/>
+        <text class="slabel">{{bikeIFPct.d180}}</text>
+      </view>
+      <view class="zone-list">
+        <block wx:for="{{bikePreds}}" wx:key="name">
+          <view class="bpred-item">
+            <view class="bpred-line">
+              <text class="bpred-name">{{item.name}}</text>
+              <text class="bpred-value">{{item.speed}}</text>
+            </view>
+            <view class="bpred-line">
+              <text class="bpred-name">用时</text>
+              <text class="bpred-value">{{item.time}}</text>
+            </view>
+            <view class="bpred-sub">平均功率 {{item.power}}</view>
+          </view>
+        </block>
+      </view>
+      <!-- 设定说明移动到卡片底部 -->
+      <view class="note-toggle" bindtap="toggleBikeNote">
+        <text class="note-title">设定说明</text>
+        <text class="note-arrow">{{showBikeNote ? '︿' : '﹀'}}</text>
+      </view>
+      <view class="note" wx:if="{{showBikeNote}}">
+        <text class="note-text">中等配置设定：次顶级碳纤维铁三车架、60mm中高框碳纤维轮组、28mm GP5000 真空胎、休息把姿势；参数：CdA≈0.25 m²、ρ=1.226 kg/m³、Crr≈0.0035、总质量≈75kg（65kg+10kg）、传动损耗≈3%、平路。IF 可编辑用于不同比赛策略。</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 跑步：比赛成绩 → 阈值配速与区间 -->
+  <view class="card" wx:if="{{currentSub==='run'}}">
+    <view class="card-title">阈值配速（T pace）</view>
+    <view class="input-group">
+      <text class="label">成绩来源</text>
+      <view class="picker">
+        <picker bindchange="onRunSourceChange" value="{{runSourceIndex}}" range="{{runSources}}" range-key="name">
+          <view class="picker-display">
+            <text>{{runSources[runSourceIndex].name}}</text>
+            <text class="arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+    <view class="input-group">
+      <text class="label">最佳成绩</text>
+      <view class="time-row">
+        <input class="time-input" type="number" placeholder="时" value="{{runBestH}}" bindinput="onRunBestH"/>
+        <text class="time-sep">时</text>
+        <input class="time-input" type="number" placeholder="分" value="{{runBestM}}" bindinput="onRunBestM"/>
+        <text class="time-sep">分</text>
+        <input class="time-input" type="number" placeholder="秒" value="{{runBestS}}" bindinput="onRunBestS"/>
+        <text class="time-sep">秒</text>
+      </view>
+    </view>
+    <view class="actions">
+      <button class="btn-primary" bindtap="calculateRun">计算阈值</button>
+      <button class="btn-secondary" bindtap="resetRun" wx:if="{{runCalculated}}">重置</button>
+    </view>
+    <view class="zones" wx:if="{{runCalculated}}">
+      <view class="threshold-header">
+        <text class="threshold-title">阈值配速</text>
+        <text class="threshold-value">{{runTPace}} min/km</text>
+      </view>
+      <view class="zone-list">
+        <block wx:for="{{runZones}}" wx:key="index">
+          <view wx:if="{{item.sep}}" class="lt-sep">
+            <view class="lt-line"></view>
+            <text class="lt-label">{{item.label}}</text>
+            <view class="lt-line"></view>
+          </view>
+          <view wx:else class="zone-item">
+            <text class="zone-name">{{item.name}}</text>
+            <text class="zone-range">{{item.range}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <!-- 预测比赛成绩 -->
+    <view class="zones" wx:if="{{runCalculated}}">
+      <view class="zone-header">
+        <text class="zone-title">预测比赛成绩</text>
+        <text class="zone-value"></text>
+      </view>
+      <view class="zone-list">
+        <view class="pred-item" wx:for="{{runPredItems}}" wx:key="name">
+          <text class="pred-name">{{item.name}}</text>
+          <text class="pred-time">{{item.time}}</text>
+          <text class="pred-pace">{{item.pace}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

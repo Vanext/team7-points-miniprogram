@@ -1,0 +1,98 @@
+{
+    "envId": "cloudbase-0gvjuqae479205e8",
+    "version": "2.0",
+    "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
+    "functionRoot": "./cloudfunctions",
+    "functions": [
+        {
+            "name": "login",
+            "timeout": 5,
+            "envVariables": {},
+            "runtime": "Nodejs16.13"
+        },
+        {
+            "name": "manageExchangeLock",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs16.13",
+            "params": {
+                "action": "checkAndAutoUnlock",
+                "data": {
+                    "userId": "4fbe2cb968be31bd0194214c384a22c1"
+                }
+            }
+        },
+        {
+            "name": "exchangeProduct",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs10.15"
+        },
+        {
+            "name": "submitPoints",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs16.13"
+        },
+        {
+            "name": "initCampData",
+            "timeout": 30,
+            "envVariables": {},
+            "runtime": "Nodejs16.13"
+        },
+        {
+            "name": "getCampData",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs16.13"
+        },
+        {
+            "name": "getCampLeaderboard",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs16.13"
+        },
+        {
+            "name": "getTrainingLeaderboard",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs10.15"
+        },
+        {
+            "name": "getLeaderboard",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs16.13"
+        },
+        {
+            "name": "adminManageExchange",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs16.13"
+        },
+        {
+            "name": "adminManageProducts",
+            "timeout": 10,
+            "envVariables": {},
+            "runtime": "Nodejs16.13"
+        }
+    ],
+    "framework": {
+        "name": "team7-points-mp",
+        "plugins": {
+            "function": {
+                "use": "@cloudbase/framework-plugin-function",
+                "inputs": {
+                    "functionRootPath": "./cloudfunctions"
+                }
+            },
+            "mp": {
+                "use": "@cloudbase/framework-plugin-mp",
+                "inputs": {
+                    "appid": "",
+                    "privateKeyPath": "./private.key"
+                }
+            }
+        }
+    }
+}

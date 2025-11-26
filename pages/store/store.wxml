@@ -1,4 +1,15 @@
 <view class="container">
-  <text>store页面</text>
-  <text>功能开发中...</text>
+  <!-- Product List -->
+  <view class="product-grid">
+    <view class="product-item" wx:for="{{products}}" wx:key="_id" bindtap="viewProduct" data-id="{{item._id}}">
+      <image class="product-image" src="{{item.image}}" mode="aspectFill"></image>
+      <view class="product-info">
+        <text class="product-name">{{item.name}}</text>
+        <view class="product-price">
+          <text class="points">{{item.points}}</text>
+          <text class="unit">积分</text>
+        </view>
+      </view>
+    </view>
+  </view>
 </view>

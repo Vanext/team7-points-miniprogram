@@ -1,0 +1,35 @@
+<!--pages/exchange-history/exchange-history.wxml-->
+<view class="container">
+  <view class="history-list">
+    <block wx:if="{{!isLoading && !isEmpty}}">
+      <view class="history-item" wx:for="{{history}}" wx:key="_id">
+        <view class="item-info">
+          <text class="product-name">{{item.productName}}</text>
+          <text class="exchange-date">{{item.exchangeDate}}</text>
+          <text class="status-badge">{{item.displayStatus}}</text>
+        </view>
+        <view class="item-points">
+          <text class="points-spent">{{item.displayPointsSpent}}</text>
+        </view>
+        <view class="item-extra" wx:if="{{item.selectedSize}}">
+          <text>尺码：{{item.selectedSize}}</text>
+        </view>
+        <view class="item-actions">
+          <button class="btn" size="mini" wx:if="{{item.status === 'pending'}}" bindtap="onCancel" data-id="{{item._id}}">取消兑换</button>
+        </view>
+      </view>
+    </block>
+
+    <view class="loading-container" wx:if="{{isLoading}}">
+      <text>加载中...</text>
+    </view>
+
+    <view class="empty-container" wx:if="{{!isLoading && isEmpty}}">
+      <text>暂无兑换记录</text>
+    </view>
+  </view>
+
+  <view class="load-more" wx:if="{{!isLoading && hasMore}}" bindtap="loadHistory">
+    <text>加载更多</text>
+  </view>
+</view>

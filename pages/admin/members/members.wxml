@@ -1,0 +1,155 @@
+<!--pages/admin/members/members.wxml-->
+<view class="container">
+  <block wx:if="{{!isAdmin}}">
+    <view class="no-access-card">
+      <view class="no-access-icon">🔒</view>
+      <view class="no-access-title">权限不足</view>
+      <view class="no-access-desc">只有管理员才能访问此页面</view>
+    </view>
+  </block>
+  <block wx:else>
+    <!-- 页面标题 -->
+    <view class="page-header" style="position: relative; left: 0rpx; top: 0rpx; height: 164rpx; display: block; box-sizing: border-box">
+      <text class="page-title">成员管理</text>
+      <text class="members-summary-inline" style="position: relative; left: 0rpx; top: -12rpx">总人数 {{totalCount}}｜正式会员 {{officialCount}}</text>
+      
+    </view>
+
+    <!-- 搜索区域 -->
+    <view class="search-card" style="position: relative; left: 0rpx; top: -39rpx; height: 120rpx; display: block; box-sizing: border-box">
+      <view class="search-container">
+        <view class="search-input-wrapper">
+          <text class="search-icon">🔍</text>
+          <input class="search-input" placeholder="搜索成员昵称或OpenID" bindinput="onKeyword" value="{{keyword}}"/>
+        </view>
+        <button class="btn btn-primary search-btn" bindtap="onSearch">搜索</button>
+      </view>
+    </view>
+
+    <!-- 成员列表 -->
+    <view class="members-container" style="position: relative; left: 0rpx; top: -58rpx">
+      <view class="list-header">
+        <view class="header-info">
+          <text class="section-title">成员列表</text>
+          <view class="member-count-badge">{{list.length}}</view>
+        </view>
+        <view class="sort-actions">
+          <button class="sort-btn {{sortBy==='points'?'active':''}}" bindtap="onSortByPoints">按积分</button>
+          <button class="sort-btn {{sortBy==='name'?'active':''}}" bindtap="onSortByName">按姓名</button>
+        </view>
+        <button class="export-btn" bindtap="onExportData" disabled="{{loading || list.length === 0}}">
+          <text class="icon">📊</text>
+          <text>导出</text>
+        </button>
+      </view>
+      
+      <view class="members-grid">
+        <block wx:for="{{list}}" wx:key="_id">
+          <view class="member-card">
+            <view class="card-header">
+              <view class="user-block" style="height: 97rpx; display: flex; box-sizing: border-box">
+                <view class="name-line">
+                  <text class="user-name">{{item.nickName || '未知昵称'}}</text>
+                  <text class="badge {{item.isActivated ? 'active' : 'inactive'}}">{{item.isActivated ? '已激活' : '未激活'}}</text>
+                  <text class="badge admin" wx:if="{{item.isAdmin}}">管理员</text>
+                  <text class="badge member" wx:if="{{item.isOfficialMember}}">正式会员</text>
+                  <text class="badge paid {{item.paidThisYear ? 'yes' : 'no'}}" wx:if="{{item.isOfficialMember}}" style="position: relative; left: 391rpx; top: -56rpx">{{item.paidThisYear ? '已缴费' : '未缴费'}}</text>
+                </view>
+                
+              </view>
+              <view class="metrics">
+                <view class="points-row">
+                  <text class="points-label">积分</text>
+                  <text class="points-value {{item.totalPoints < 0 ? 'negative-points' : ''}}">{{item.totalPoints || 0}}</text>
+                </view>
+                <text class="lock-badge {{item.exchange_locked ? 'locked' : 'unlocked'}}" wx:if="{{item.exchange_locked !== undefined}}">{{item.exchange_locked ? '🔒 已锁定' : '🔓 已解锁'}}</text>
+              </view>
+            </view>
+
+            <view class="card-actions actions-grid">
+              <button 
+                class="action-btn admin-btn {{item.isAdmin ? 'remove' : 'add'}}"
+                data-user-id="{{item._id}}"
+                data-is-admin="{{item.isAdmin}}"
+                data-nick-name="{{item.nickName}}"
+                bindtap="toggleAdminStatus">
+                <text class="btn-icon">{{item.isAdmin ? '👤' : '⭐'}}</text>
+                <text class="btn-text">{{item.isAdmin ? '取消管理员' : '设置管理员'}}</text>
+              </button>
+              
+              <button 
+                class="action-btn lock-btn {{item.exchange_locked ? 'unlock' : 'lock'}}"
+                data-user-id="{{item._id}}"
+                data-is-locked="{{item.exchange_locked}}"
+                data-nick-name="{{item.nickName}}"
+                bindtap="toggleExchangeLock">
+                <text class="btn-icon">{{item.exchange_locked ? '🔓' : '🔒'}}</text>
+                <text class="btn-text">{{item.exchange_locked ? '解锁兑换' : '锁定兑换'}}</text>
+              </button>
+              <!-- 将新积分输入框作为第一行第三列 -->
+              <input 
+                class="points-input grid-input" 
+                type="text" 
+                placeholder="新积分" 
+                data-id="{{item._id}}" 
+                bindinput="onNewPointsInput"
+                value="{{newPointsMap[item._id] || ''}}"
+              />
+
+              <!-- 第二行第一列：正式会员开关 -->
+              <button
+                class="action-btn admin-btn"
+                data-user-id="{{item._id}}"
+                data-is-official="{{item.isOfficialMember}}"
+                data-nick-name="{{item.nickName}}"
+                bindtap="toggleOfficialMember">
+                <text class="btn-icon">{{item.isOfficialMember ? '🏅' : '👤'}}</text>
+                <text class="btn-text">{{item.isOfficialMember ? '取消正式会员' : '设为正式会员'}}</text>
+              </button>
+
+              <!-- 第二行第二列：当年缴费标记按钮（随状态变色） -->
+              <button
+                class="action-btn admin-btn paid-btn {{item.paidThisYear ? 'is-paid' : 'not-paid'}}"
+                data-user-id="{{item._id}}"
+                data-nick-name="{{item.nickName}}"
+                bindtap="markPaidThisYear">
+                <text class="btn-icon">💳</text>
+                <text class="btn-text">标记缴费</text>
+              </button>
+
+              <!-- 第二行第三列：设置积分按钮 -->
+              <button 
+                class="set-points-btn grid-set-btn" 
+                data-id="{{item._id}}" 
+                data-openid="{{item._openid}}" 
+                bindtap="onSetPoints"
+                disabled="{{newPointsMap[item._id] === '' || newPointsMap[item._id] === null}}">
+                <text class="btn-icon">💎</text>
+                <text class="btn-text">设置</text>
+              </button>
+            </view>
+          </view>
+        </block>
+        
+        <!-- 空状态 -->
+        <view class="empty-state" wx:if="{{list.length === 0}}">
+          <view class="empty-icon">👥</view>
+          <text class="empty-title">暂无成员数据</text>
+          <text class="empty-desc">{{keyword ? '未找到匹配的成员' : '还没有成员加入'}}</text>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more-section" wx:if="{{list.length > 0}}">
+        <button 
+          class="load-more-btn" 
+          bindtap="onLoadMore" 
+          disabled="{{loading || noMore}}"
+        >
+          <text class="load-icon">{{loading ? '⏳' : (noMore ? '✅' : '⬇️')}}</text>
+          <text>{{noMore ? '已加载全部' : (loading ? '加载中...' : '加载更多')}}</text>
+        </button>
+      </view>
+    </view>
+  </block>
+</view>

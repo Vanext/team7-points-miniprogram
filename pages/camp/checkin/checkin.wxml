@@ -1,0 +1,37 @@
+<view class="checkin-page">
+  <view class="header">
+    <text class="title">第{{week}}周 · 计划 {{plannedHours}} 小时</text>
+  </view>
+
+  <view class="section">
+    <text class="label">上传周训练截图</text>
+    <view class="images">
+      <block wx:for="{{images}}" wx:key="index">
+        <image class="image" src="{{item}}" mode="aspectFill"></image>
+      </block>
+      <button class="upload-btn" bindtap="chooseImage">选择图片</button>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="label">识别结果</text>
+    <view class="result">
+      <text class="result-text">本周训练时长：{{actualHours}} 小时（{{actualMinutes}} 分钟）</text>
+    </view>
+    <view class="input-row">
+      <input style="height: 56rpx; display: block; box-sizing: border-box" class="input hour-input" type="digit" placeholder="小时" value="{{inputHoursStr}}" bindinput="onHoursPartInput"/>
+      <text class="unit-label">小时</text>
+      <input style="height: 56rpx; display: block; box-sizing: border-box" class="input minute-input" type="digit" placeholder="分" value="{{inputMinutesStr}}" bindinput="onMinutesPartInput"/>
+      <text class="unit-label">分</text>
+    </view>
+    <view class="completion">
+      <text class="completion-text">完成度：{{completionRate}}%</text>
+      <view class="progress"><view class="progress-inner" style="width: {{completionRate}}%;"></view></view>
+    </view>
+    
+  </view>
+
+  <view class="footer">
+    <button class="submit-btn" bindtap="submit" loading="{{submitting}}" disabled="{{submitting || !canSubmit}}">提交打卡</button>
+  </view>
+</view>

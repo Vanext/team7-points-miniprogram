@@ -1,0 +1,60 @@
+{
+  "logo": "/__auth/env/54423064ef3ba6c1176a6a07b110cc26.png",
+  "backgroundColor": "#f3f3f3",
+  "miniprogram": [
+    {
+      "id": "__miniprogram_phone",
+      "label": "微信小程序手机号授权",
+      "type": "miniprogram_phone",
+      "enable": true
+    }
+  ],
+  "web": [
+    {
+      "enable": true,
+      "icon": "https://weda.cloud.tencent.com/img/wx_heper_mp.png",
+      "id": "wxfe70b3f986aad2fb",
+      "label": "微信扫码登录",
+      "type": "miniprogram_qrcode"
+    },
+    {
+      "id": "__password",
+      "label": "账户密码登录",
+      "type": "password",
+      "enable": true,
+      "extraLink":{"title":"忘记账号或密码","url":"https://developers.weixin.qq.com/miniprogram/dev/wxcloud/guide/extensions/manage-system/faq.html","type":"_blank"}
+    }
+  ],
+  "agreement": {
+    "enable": false,
+    "items": [
+      {
+        "label": "隐私协议",
+        "type": "privacy",
+        "value": "",
+        "enable": false
+      },
+      {
+        "label": "用户协议",
+        "type": "user",
+        "value": "",
+        "enable": false
+      }
+    ]
+  },
+  "userRegistry": {
+    "enable": false
+  },
+  "access": {
+    "needLogin": true,
+    "noPermissionPolicy": "to_login",
+    "defaultRoleId": "1677223869320339457",
+    "defaultExternalRoleId": "1712387472803512322",
+    "whiteListPageIds": "",
+    "configVersion": "v2"
+  },
+  "security": {
+    "expiresTime": 2592000,
+    "enableLoginStatusShare": true
+  }
+}

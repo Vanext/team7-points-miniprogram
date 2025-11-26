@@ -1,0 +1,178 @@
+<!--管理员统计页面-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view class="loading-wrapper" wx:if="{{loading}}">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <view wx:else>
+    <!-- 统计概览 -->
+    <view class="overview-section">
+      <view class="overview-header">
+        <text class="section-title">俱乐部概览</text>
+        <text class="active-rate">活跃率: {{getActiveRate()}}%</text>
+      </view>
+      
+      <view class="overview-grid">
+        <view class="overview-item" bindtap="goToMemberManagement">
+          <text class="overview-number">{{summary.totalUsers}}</text>
+          <text class="overview-label">总成员</text>
+          <text class="overview-icon">👥</text>
+        </view>
+        <view class="overview-item">
+          <text class="overview-number">{{summary.activeUsers}}</text>
+          <text class="overview-label">活跃成员</text>
+          <text class="overview-icon">🔥</text>
+        </view>
+        <view class="overview-item" bindtap="goToAudit">
+          <text class="overview-number">{{summary.pendingRecords}}</text>
+          <text class="overview-label">待审核</text>
+          <text class="overview-icon">⏳</text>
+        </view>
+        <view class="overview-item">
+          <text class="overview-number">{{summary.totalProducts}}</text>
+          <text class="overview-label">商品数量</text>
+          <text class="overview-icon">🛍️</text>
+        </view>
+        <view class="overview-item wide">
+          <text class="overview-number">{{formatNumber(summary.totalPointsIssued)}}</text>
+          <text class="overview-label">总发放积分</text>
+          <text class="overview-icon">📈</text>
+        </view>
+        <view class="overview-item wide" bindtap="goToExchangeManagement">
+          <text class="overview-number">{{formatNumber(summary.totalPointsSpent)}}</text>
+          <text class="overview-label">总消费积分</text>
+          <text class="overview-icon">💰</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 时间范围选择 -->
+    <view class="time-range-selector">
+      <view class="range-item {{timeRange === item.value ? 'active' : ''}}" 
+            wx:for="{{timeRanges}}" wx:key="value"
+            data-range="{{item.value}}" bindtap="onTimeRangeChange">
+        <text class="range-text">{{item.label}}</text>
+      </view>
+    </view>
+
+    <!-- 积分趋势图表 -->
+    <view class="chart-section">
+      <view class="section-header">
+        <text class="section-title">积分趋势</text>
+        <text class="section-subtitle">{{currentTimeRangeLabel}}积分发放与消费</text>
+      </view>
+      <view class="chart-container">
+        <canvas 
+          class="chart-canvas" 
+          canvas-id="trendChart"
+          bindinit="{{trendChart.onInit}}"
+          disable-scroll="true">
+        </canvas>
+      </view>
+    </view>
+
+    <!-- 活动类型统计 -->
+    <view class="chart-section" wx:if="{{Object.keys(activityStats).length > 0}}">
+      <view class="section-header">
+        <text class="section-title">活动类型统计</text>
+        <text class="section-subtitle">各类活动积分分布</text>
+      </view>
+      <view class="chart-container">
+        <canvas 
+          class="chart-canvas" 
+          canvas-id="activityChart"
+          bindinit="{{activityChart.onInit}}"
+          disable-scroll="true">
+        </canvas>
+      </view>
+      
+      <!-- 活动统计列表 -->
+      <view class="stats-list">
+        <view class="stats-item" wx:for="{{Object.entries(activityStats)}}" wx:key="index">
+          <view class="stats-info">
+            <text class="stats-icon">{{getActivityIcon(item[0])}}</text>
+            <view class="stats-details">
+              <text class="stats-name">{{item[0]}}</text>
+              <text class="stats-count">{{item[1].count}}次活动</text>
+            </view>
+          </view>
+          <text class="stats-points">{{formatNumber(item[1].points)}}分</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 热门商品统计 -->
+    <view class="chart-section" wx:if="{{Object.keys(productStats).length > 0}}">
+      <view class="section-header">
+        <text class="section-title">热门商品</text>
+        <text class="section-subtitle">兑换次数排行</text>
+      </view>
+      <view class="chart-container">
+        <canvas 
+          class="chart-canvas" 
+          canvas-id="productChart"
+          bindinit="{{productChart.onInit}}"
+          disable-scroll="true">
+        </canvas>
+      </view>
+    </view>
+
+    <!-- 活跃用户排行 -->
+    <view class="ranking-section" wx:if="{{topUsers.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">活跃用户排行</text>
+        <text class="section-subtitle">{{currentTimeRangeLabel}}积分获得排行</text>
+      </view>
+      
+      <view class="ranking-list">
+        <view class="ranking-item" wx:for="{{topUsers}}" wx:key="userId">
+          <view class="ranking-number">
+            <text class="rank">{{index + 1}}</text>
+          </view>
+          <image class="user-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="user-info">
+            <text class="user-nickname">{{item.nickname}}</text>
+            <text class="user-records">{{item.records}}条记录</text>
+          </view>
+          <text class="user-points">{{formatNumber(item.points)}}分</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 成员活跃度 -->
+    <view class="member-section" wx:if="{{memberStats.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">成员活跃度</text>
+        <text class="section-subtitle">{{currentTimeRangeLabel}}成员活动情况</text>
+      </view>
+      
+      <view class="member-list">
+        <view class="member-item" wx:for="{{memberStats.slice(0, 20)}}" wx:key="userId">
+          <image class="member-avatar" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+          <view class="member-info">
+            <view class="member-name-row">
+              <text class="member-nickname">{{item.nickname}}</text>
+              <view class="admin-badge" wx:if="{{item.isAdmin}}">管理员</view>
+            </view>
+            <text class="member-activity">
+              {{item.records}}次活动 · {{formatNumber(item.points)}}积分
+            </text>
+          </view>
+          <text class="member-total">{{formatNumber(item.totalPoints)}}</text>
+        </view>
+      </view>
+      
+      <view class="show-more" wx:if="{{memberStats.length > 20}}" bindtap="goToMemberManagement">
+        <text class="show-more-text">查看全部成员</text>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && summary.totalUsers === 0}}">
+      <view class="empty-icon">📊</view>
+      <text class="empty-text">暂无统计数据</text>
+      <text class="empty-subtitle">等待成员加入俱乐部</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,61 @@
+/* pages/exchange-history/exchange-history.wxss */
+.container {
+  padding: 20rpx;
+  background-color: #f7f7f7;
+  min-height: 100vh;
+}
+
+.history-list {
+  background-color: #fff;
+  border-radius: 10rpx;
+  overflow: hidden;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 20rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-name {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.exchange-date {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.item-points {
+  font-size: 32rpx;
+  color: #ff5722;
+  font-weight: bold;
+}
+
+.loading-container, .empty-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50rpx;
+  color: #999;
+}
+
+.load-more {
+  text-align: center;
+  padding: 20rpx;
+  color: #999;
+  font-size: 26rpx;
+}

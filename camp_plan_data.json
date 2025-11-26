@@ -1,0 +1,208 @@
+{
+  "camp_id": "camp_hengqin_2026",
+  "name": "IRONMAN 70.3 横琴训练营 2026",
+  "description": "为 IRONMAN 70.3 横琴站准备的13周通用训练计划",
+  "start_date": "2026-02-01",
+  "race_date": "2026-03-15",
+  "total_weeks": 13,
+  "coach_note": "本训练计划为通用版本，适合有一定基础的铁人三项爱好者。建议根据个人情况调整训练强度",
+  "logo_url": "/images/default-image.png",
+  "hero_url": "/images/default-image.png",
+  "weeks": [
+    {
+      "week_num": 1,
+      "phase": "Base 1",
+      "theme": "适应与启动",
+      "total_planned_minutes": 450,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "完全休息或20分钟泡沫轴放松。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "技术基础", "content": "热身400m; 8x50m分解游(单臂/侧身); 主项: 4x400m Z2 (间歇30s); 放松200m。", "duration": 60 },
+        { "day": 3, "type": "BIKE", "title": "有氧转速", "content": "60分钟 Z2 轻松骑。重点保持踏频 90-100rpm，激活腿部神经。", "duration": 60 },
+        { "day": 4, "type": "RUN", "title": "基础有氧跑", "content": "45分钟 Z2。最后包含 4x20秒 冲刺跑(Strides) 以激活核心。", "duration": 45 },
+        { "day": 5, "type": "SWIM", "title": "耐力游", "content": "连续游进 1500m，保持 Z2 节奏，不追求速度，专注划水效率。", "duration": 45 },
+        { "day": 6, "type": "BIKE", "title": "长距离耐力(LSD)", "content": "150分钟 Z2。平路为主，每30分钟保持5分钟TT趴把姿势。", "duration": 150 },
+        { "day": 7, "type": "RUN", "title": "长距离慢跑", "content": "90分钟 Z2。保持心率稳定，不要冲刺。", "duration": 90 }
+      ]
+    },
+    {
+      "week_num": 2,
+      "phase": "Base 2",
+      "theme": "有氧积累",
+      "total_planned_minutes": 510,
+      "schedule": [
+        { "day": 1, "type": "STRENGTH", "title": "力量与核心", "content": "30分钟核心训练（平板支撑/卷腹）+ 深蹲/硬拉基础动作。", "duration": 30 },
+        { "day": 2, "type": "SWIM", "title": "速度技巧", "content": "热身400m; 10x100m (50m快/50m慢); 放松200m。", "duration": 60 },
+        { "day": 3, "type": "BIKE", "title": "节奏骑行", "content": "75分钟。包含 3x10分钟 Z3 (甜区下限)，间歇5分钟 Z1。", "duration": 75 },
+        { "day": 4, "type": "RUN", "title": "变速跑", "content": "50分钟。中间包含 10分钟 Z3 节奏跑。", "duration": 50 },
+        { "day": 5, "type": "SWIM", "title": "CSS测试日", "content": "热身; 全力测400m; 休息充分; 全力测200m; 用于计算训练配速。", "duration": 55 },
+        { "day": 6, "type": "BIKE", "title": "长距离耐力", "content": "160分钟 Z2。尝试寻找横琴类似的起伏路段。", "duration": 160 },
+        { "day": 7, "type": "RUN", "title": "有氧耐力", "content": "80分钟 Z2。注意补水节奏练习。", "duration": 80 }
+      ]
+    },
+    {
+      "week_num": 3,
+      "phase": "Base 3",
+      "theme": "有氧峰值",
+      "total_planned_minutes": 580,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "完全休息。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "耐力间歇", "content": "热身400m; 5x400m Z2/Z3 强有氧，间歇45s; 放松200m。", "duration": 70 },
+        { "day": 3, "type": "BIKE", "title": "力量耐力", "content": "80分钟。包含 4x8分钟 低踏频(60rpm) Z3，模拟大桥爬坡。", "duration": 80 },
+        { "day": 4, "type": "RUN", "title": "基础跑", "content": "50分钟 Z2。", "duration": 50 },
+        { "day": 5, "type": "SWIM", "title": "技术游", "content": "2000m 总量，强调抓水抱水。", "duration": 50 },
+        { "day": 6, "type": "BIKE", "title": "长距离骑行", "content": "180分钟 Z2。每小时补给练习。", "duration": 180 },
+        { "day": 7, "type": "BRICK", "title": "迷你砖式", "content": "骑 90分钟 Z2 + 跑 30分钟 Z2。体验换项腿部感觉。", "duration": 120 }
+      ]
+    },
+    {
+      "week_num": 4,
+      "phase": "Base 4",
+      "theme": "恢复周 (Recovery)",
+      "total_planned_minutes": 360,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "放松。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "轻松游", "content": "1500m 任意泳姿，轻松。", "duration": 40 },
+        { "day": 3, "type": "BIKE", "title": "轻松骑", "content": "45分钟 Z1/Z2。", "duration": 45 },
+        { "day": 4, "type": "RUN", "title": "技术跑", "content": "30分钟，专注步频180+。", "duration": 30 },
+        { "day": 5, "type": "REST", "title": "休息日", "content": "多睡觉。", "duration": 0 },
+        { "day": 6, "type": "BIKE", "title": "有氧骑", "content": "90分钟 Z2，看风景。", "duration": 90 },
+        { "day": 7, "type": "RUN", "title": "轻松长跑", "content": "60分钟 Z2。", "duration": 60 }
+      ]
+    },
+    {
+      "week_num": 5,
+      "phase": "Build 1",
+      "theme": "阈值引入",
+      "total_planned_minutes": 540,
+      "schedule": [
+        { "day": 1, "type": "STRENGTH", "title": "力量训练", "content": "下肢力量：深蹲、弓步蹲。", "duration": 40 },
+        { "day": 2, "type": "SWIM", "title": "CSS节奏", "content": "热身; 10x200m @ CSS+2s; 间歇20s; 放松。", "duration": 60 },
+        { "day": 3, "type": "BIKE", "title": "阈值间歇", "content": "75分钟。3x12分钟 Z4 (FTP 90-95%)，间歇6分钟。", "duration": 75 },
+        { "day": 4, "type": "RUN", "title": "乳酸门槛跑", "content": "50分钟。主项: 20分钟 Z4 (10km比赛配速)。", "duration": 50 },
+        { "day": 5, "type": "SWIM", "title": "公开水域技巧", "content": "泳池模拟：鳄鱼眼观察(Sighting)练习，每3划抬头一次。", "duration": 45 },
+        { "day": 6, "type": "BIKE", "title": "长距离+大桥模拟", "content": "180分钟。每30分钟做一次5分钟 Z3 低踏频爬坡模拟。", "duration": 180 },
+        { "day": 7, "type": "RUN", "title": "有氧长跑", "content": "90分钟 Z2。后半程尝试保持配速不掉。", "duration": 90 }
+      ]
+    },
+    {
+      "week_num": 6,
+      "phase": "Build 2",
+      "theme": "专项耐力",
+      "total_planned_minutes": 600,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "主动恢复。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "长距离间歇", "content": "热身; 4x500m Z3; 间歇45s; 放松。", "duration": 70 },
+        { "day": 3, "type": "BIKE", "title": "大齿盘力量", "content": "80分钟。5x8分钟 55-60rpm 重齿比 Z3/Z4。模拟横琴逆风/上桥。", "duration": 80 },
+        { "day": 4, "type": "RUN", "title": "间歇跑", "content": "60分钟。8x800m Z4，间歇200m慢跑。", "duration": 60 },
+        { "day": 5, "type": "SWIM", "title": "恢复游", "content": "1500m 技术游。", "duration": 40 },
+        { "day": 6, "type": "BIKE", "title": "长距离骑行", "content": "200分钟 Z2。保持气动姿势时间占比50%以上。", "duration": 200 },
+        { "day": 7, "type": "BRICK", "title": "砖式训练", "content": "骑 100分钟 Z2/Z3 + 跑 40分钟 Z3(70.3目标配速)。", "duration": 140 }
+      ]
+    },
+    {
+      "week_num": 7,
+      "phase": "Build 3",
+      "theme": "强度叠加",
+      "total_planned_minutes": 660,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "完全休息。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "红区边缘", "content": "热身; 15x100m @ CSS; 间歇15s; 很有挑战性。", "duration": 65 },
+        { "day": 3, "type": "BIKE", "title": "过桥能力", "content": "90分钟。4x15分钟 Z3/Z4 甜区上部。保持稳定输出。", "duration": 90 },
+        { "day": 4, "type": "RUN", "title": "节奏跑", "content": "60分钟。30分钟 Z3 持续跑。", "duration": 60 },
+        { "day": 5, "type": "SWIM", "title": "轻松游", "content": "2000m 持续游，不想配速。", "duration": 45 },
+        { "day": 6, "type": "BIKE", "title": "长距离耐力", "content": "210分钟 (3.5h)。这是关键的有氧基础课。", "duration": 210 },
+        { "day": 7, "type": "RUN", "title": "长距离跑", "content": "105分钟 Z2。适应长时间站立。", "duration": 105 }
+      ]
+    },
+    {
+      "week_num": 8,
+      "phase": "Build 4",
+      "theme": "恢复周",
+      "total_planned_minutes": 400,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "按摩/理疗。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "技术游", "content": "1500m 分解动作。", "duration": 40 },
+        { "day": 3, "type": "BIKE", "title": "轻松转腿", "content": "60分钟 Z1/Z2。", "duration": 60 },
+        { "day": 4, "type": "RUN", "title": "轻松跑", "content": "40分钟 Z2。", "duration": 40 },
+        { "day": 5, "type": "REST", "title": "休息日", "content": "休息。", "duration": 0 },
+        { "day": 6, "type": "BIKE", "title": "适度有氧", "content": "100分钟 Z2。", "duration": 100 },
+        { "day": 7, "type": "RUN", "title": "有氧跑", "content": "60分钟 Z2。", "duration": 60 }
+      ]
+    },
+    {
+      "week_num": 9,
+      "phase": "Peak 1",
+      "theme": "比赛模拟 (Big Day)",
+      "total_planned_minutes": 720,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "蓄力。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "比赛配速", "content": "热身; 3x600m @ 70.3 Race Pace; 间歇30s。", "duration": 60 },
+        { "day": 3, "type": "BIKE", "title": "间歇冲刺", "content": "80分钟。包含 10x1分钟 Z5，模拟超车/上桥短坡。", "duration": 80 },
+        { "day": 4, "type": "RUN", "title": "递增跑", "content": "60分钟。每15分钟配速加快10秒。", "duration": 60 },
+        { "day": 5, "type": "SWIM", "title": "开放水域模拟", "content": "2000m。闭眼游20划+抬头定位。如无条件则泳池模拟。", "duration": 50 },
+        { "day": 6, "type": "BIKE", "title": "赛道实战模拟", "content": "180分钟。前60m Z2，中60m Z3(比赛瓦数)，后60m Z2。全程气动。", "duration": 180 },
+        { "day": 7, "type": "BRICK", "title": "长距离砖式", "content": "骑 2.5小时(150m) + 跑 45分钟(目标配速)。本周期最痛苦的一天。", "duration": 195 }
+      ]
+    },
+    {
+      "week_num": 10,
+      "phase": "Peak 2",
+      "theme": "配速巩固",
+      "total_planned_minutes": 580,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "完全休息。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "混合节奏", "content": "2500m 总量。包含 10x100m 比赛配速。", "duration": 60 },
+        { "day": 3, "type": "BIKE", "title": "2x20分钟", "content": "80分钟。2x20分钟 @ 70.3 目标瓦数，感受体感。", "duration": 80 },
+        { "day": 4, "type": "RUN", "title": "耐热适应", "content": "50分钟。如环境允许，尝试在较热时段跑(注意安全)。Z2为主。", "duration": 50 },
+        { "day": 5, "type": "SWIM", "title": "短冲刺", "content": "1500m。包含 20x25m 快冲，激活。", "duration": 40 },
+        { "day": 6, "type": "BIKE", "title": "长距离收尾", "content": "150分钟。最后一次长距离骑行，Z2为主，中间穿插3x10m 比赛配速。", "duration": 150 },
+        { "day": 7, "type": "RUN", "title": "长距离收尾", "content": "90分钟 Z2。测试全套比赛装备(鞋/袜/服)。", "duration": 90 }
+      ]
+    },
+    {
+      "week_num": 11,
+      "phase": "Peak 3",
+      "theme": "最后磨练",
+      "total_planned_minutes": 480,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "核心放松。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "连续游", "content": "1900m (比赛距离) 连续游，模拟比赛配速，测试体感时间。", "duration": 45 },
+        { "day": 3, "type": "BIKE", "title": "金字塔", "content": "70分钟。1-2-3-4-3-2-1分钟 Z4，间歇等长。", "duration": 70 },
+        { "day": 4, "type": "RUN", "title": "最后间歇", "content": "45分钟。5x1km @ Z4/Z5，寻找速度感。", "duration": 45 },
+        { "day": 5, "type": "REST", "title": "休息日", "content": "休息。", "duration": 0 },
+        { "day": 6, "type": "BRICK", "title": "赛前砖式", "content": "骑 90分钟 (包含30m比赛配速) + 跑 20分钟 (比赛配速)。", "duration": 110 },
+        { "day": 7, "type": "RUN", "title": "轻松跑", "content": "70分钟 Z2。享受跑步。", "duration": 70 }
+      ]
+    },
+    {
+      "week_num": 12,
+      "phase": "Taper 1",
+      "theme": "大幅减量",
+      "total_planned_minutes": 320,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "休息日", "content": "拉伸。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "保持水感", "content": "1500m。包含 4x100m 比赛配速。", "duration": 40 },
+        { "day": 3, "type": "BIKE", "title": "减量骑", "content": "60分钟。包含 5x2分钟 比赛配速，其余轻松。", "duration": 60 },
+        { "day": 4, "type": "RUN", "title": "减量跑", "content": "40分钟。包含 4x1分钟 比赛配速。", "duration": 40 },
+        { "day": 5, "type": "REST", "title": "休息日", "content": "检查车辆器材。", "duration": 0 },
+        { "day": 6, "type": "BIKE", "title": "短途骑", "content": "60分钟 Z1/Z2。", "duration": 60 },
+        { "day": 7, "type": "RUN", "title": "短途跑", "content": "40分钟 Z2。", "duration": 40 }
+      ]
+    },
+    {
+      "week_num": 13,
+      "phase": "Race Week",
+      "theme": "比赛周！",
+      "total_planned_minutes": 150,
+      "schedule": [
+        { "day": 1, "type": "REST", "title": "抵达/休息", "content": "旅行日，注意补水，不要走路太多。", "duration": 0 },
+        { "day": 2, "type": "SWIM", "title": "试水", "content": "20分钟。适应海港水温和能见度。", "duration": 20 },
+        { "day": 3, "type": "BIKE", "title": "激活骑行", "content": "30分钟。检查车辆，做几个30秒高踏频激活。", "duration": 30 },
+        { "day": 4, "type": "RUN", "title": "激活跑", "content": "20分钟。非常轻松，加2个15秒冲刺。", "duration": 20 },
+        { "day": 5, "type": "REST", "title": "交车日", "content": "放置T1/T2包，早点吃饭，早睡。", "duration": 0 },
+        { "day": 6, "type": "REST", "title": "比赛前日", "content": "完全放松，脑海演练比赛流程。", "duration": 0 },
+        { "day": 7, "type": "RACE", "title": "IRONMAN 70.3 HENGQIN", "content": "享受比赛！控制前段，后段发力。RACE DAY!", "duration": 300 }
+      ]
+    }
+  ]
+}

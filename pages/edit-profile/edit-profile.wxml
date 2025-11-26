@@ -1,0 +1,54 @@
+<!--pages/edit-profile/edit-profile.wxml-->
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">编辑个人信息</text>
+  </view>
+
+  <!-- 头像编辑区域 -->
+  <view class="card avatar-section">
+    <view class="section-title">头像</view>
+    <view class="avatar-container">
+      <image class="avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" bindtap="onAvatarTap"></image>
+      <view class="avatar-actions">
+        <button class="btn btn-outline" bindtap="onAvatarTap" style="height: 36rpx; display: inline-flex; box-sizing: border-box; left: 0rpx; top: 0rpx; width: 179rpx">更换头像</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 昵称编辑区域 -->
+  <view class="card nickname-section">
+    <view class="section-title">昵称</view>
+    <view class="input-group">
+      <input style="height: 42rpx; display: block; box-sizing: border-box" 
+        class="input-field" 
+        placeholder="请输入昵称" 
+        value="{{userInfo.nickName}}" 
+        bindinput="onNicknameInput"
+        maxlength="20"
+        style="height: 80rpx; line-height: 80rpx; padding: 0 20rpx;"
+      />
+      <text class="input-hint">建议使用真实姓名，便于管理员识别</text>
+    </view>
+  </view>
+
+  <!-- 其他信息显示 -->
+  <view class="card info-section">
+    <view class="section-title">账户信息</view>
+    <view class="info-item">
+      <text class="info-label">积分</text>
+      <text class="info-value">{{dbUserInfo.totalPoints || 0}}</text>
+    </view>
+    <view class="info-item" wx:if="{{dbUserInfo.formattedJoinDate}}">
+      <text class="info-label">加入时间</text>
+      <text class="info-value">{{dbUserInfo.formattedJoinDate}}</text>
+    </view>
+    <view class="info-item" wx:if="{{dbUserInfo.isAdmin}}">
+      <text class="info-label">身份</text>
+      <text class="info-value admin-badge">管理员</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions" style="display: flex; gap: 20rpx; padding: 20rpx; width: 712rpx; height: 300rpx; box-sizing: border-box"><button class="btn btn-primary" bindtap="saveProfile" loading="{{saving}}"style="flex: 1; height: 80rpx; line-height: 80rpx; font-size: 32rpx;" style="position: relative; left: 104rpx; top: -23rpx">保存修改</button><button class="btn btn-outline" bindtap="goBack"style="flex: 1; height: 80rpx; line-height: 80rpx; font-size: 32rpx;" style="position: relative; left: 259rpx; top: -162rpx">取消</button></view>
+</view>

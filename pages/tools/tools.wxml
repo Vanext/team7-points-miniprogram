@@ -1,0 +1,229 @@
+<!--pages/tools/tools.wxml-->
+<view class="container">
+  <!-- 分页选择 -->
+  <view class="tab-container">
+    <view class="tab-item {{currentTab === 'tire_pressure' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="tire_pressure">
+      胎压助手
+    </view>
+    <view class="tab-item {{currentTab === 'tool2' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="tool2">
+      工具2
+    </view>
+    <view class="tab-item {{currentTab === 'tool3' ? 'active' : ''}}" 
+          bindtap="switchTab" data-tab="tool3">
+      工具3
+    </view>
+  </view>
+
+  <!-- 胎压助手分页 -->
+  <view class="tab-content" wx:if="{{currentTab === 'tire_pressure'}}">
+    <!-- 页面标题 -->
+    <view class="page-header">
+      <text class="page-title">胎压助手</text>
+      <text class="page-subtitle">真空胎胎压推荐</text>
+    </view>
+
+  <!-- 输入区域 -->
+  <view class="input-section">
+    <!-- 体重输入 -->
+    <view class="input-group">
+      <text class="input-label">骑手体重 (kg)</text>
+      <input 
+        class="weight-input" 
+        type="number" 
+        placeholder="请输入体重 (40-120kg)"
+        value="{{riderWeight}}"
+        bindinput="onWeightInput"
+        maxlength="3"
+      />
+      <text class="input-hint">{{weightHint}}</text>
+    </view>
+
+    <!-- 车型选择 -->
+    <view class="input-group">
+      <text class="input-label">车型类型</text>
+      <view class="picker-container">
+        <picker 
+          bindchange="onBikeStyleChange" 
+          value="{{selectedBikeStyle}}" 
+          range="{{bikeStyles}}" 
+          range-key="name"
+        >
+          <view class="picker-display">
+            <text>{{bikeStyles[selectedBikeStyle].name}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- 轮圈类型选择 -->
+    <view class="input-group">
+      <text class="input-label">轮圈类型</text>
+      <view class="picker-container">
+        <picker 
+          bindchange="onBikeTypeChange" 
+          value="{{selectedBikeType}}" 
+          range="{{bikeTypes}}" 
+          range-key="name"
+        >
+          <view class="picker-display">
+            <text>{{bikeTypes[selectedBikeType].name}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+      <text class="input-hint">{{bikeTypeHint}}</text>
+    </view>
+
+    <!-- 路面类型选择 -->
+    <view class="input-group">
+      <text class="input-label">主要路面类型</text>
+      <view class="picker-container">
+        <picker 
+          bindchange="onSurfaceTypeChange" 
+          value="{{selectedSurfaceType}}" 
+          range="{{surfaceTypes}}" 
+          range-key="name"
+        >
+          <view class="picker-display">
+            <text>{{surfaceTypes[selectedSurfaceType].name}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+      <text class="input-hint">{{surfaceTypeHint}}</text>
+    </view>
+
+    <!-- 路面干湿选择 -->
+    <view class="input-group">
+      <text class="input-label">路面干湿状况</text>
+      <view class="picker-container">
+        <picker 
+          bindchange="onWetConditionChange" 
+          value="{{selectedWetCondition}}" 
+          range="{{wetConditions}}" 
+          range-key="name"
+        >
+          <view class="picker-display">
+            <text>{{wetConditions[selectedWetCondition].name}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+      <text class="input-hint">{{wetConditions[selectedWetCondition].description}}</text>
+    </view>
+
+    <!-- 轮胎宽度选择 -->
+    <view class="input-group">
+      <text class="input-label">轮胎宽度 (mm)</text>
+      <view class="picker-container">
+        <picker 
+          bindchange="onTireWidthChange" 
+          value="{{selectedTireWidth}}" 
+          range="{{tireWidths}}" 
+          range-key="name"
+        >
+          <view class="picker-display">
+            <text>{{tireWidths[selectedTireWidth].name}}</text>
+            <text class="picker-arrow">▼</text>
+          </view>
+        </picker>
+      </view>
+      <text class="input-hint">{{tireWidthHint}}</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮区域 -->
+  <view class="action-section">
+    <button 
+      class="calculate-btn {{calculating ? 'calculating' : ''}}" 
+      bindtap="performCalculation"
+      disabled="{{calculating}}"
+    >
+      <text wx:if="{{!calculating}}">计算胎压</text>
+      <text wx:else>计算中...</text>
+    </button>
+    
+    <button 
+      class="reset-btn" 
+      bindtap="resetCalculation"
+      wx:if="{{calculated}}"
+    >
+      重新计算
+    </button>
+  </view>
+
+  <!-- 计算结果区域 -->
+  <view class="result-section" wx:if="{{calculated}}">
+    <view class="section-title">推荐胎压</view>
+    
+    <view class="pressure-results">
+      <view class="pressure-item front">
+        <view class="pressure-label">前轮</view>
+        <view class="pressure-value">{{frontPressure}}</view>
+        <view class="pressure-unit">PSI</view>
+      </view>
+      
+      <view class="pressure-divider"></view>
+      
+      <view class="pressure-item rear">
+        <view class="pressure-label">后轮</view>
+        <view class="pressure-value">{{rearPressure}}</view>
+        <view class="pressure-unit">PSI</view>
+      </view>
+    </view>
+
+    <!-- 建议说明 -->
+    <view class="advice-section">
+      <view class="advice-title">💡 专业建议</view>
+      <view class="advice-content">
+        根据您的骑行条件，建议前轮使用 {{frontPressure}} PSI，后轮使用 {{rearPressure}} PSI。
+        这个压力设置能在舒适性和性能之间取得最佳平衡。
+      </view>
+    </view>
+  </view>
+
+  <!-- 使用说明 -->
+  <view class="tips-section">
+    <view class="section-title">使用说明</view>
+    <view class="tips-content">
+      <view class="tip-item">
+        <text class="tip-icon">📏</text>
+        <text class="tip-text">输入准确的体重和轮胎规格以获得最佳计算结果</text>
+      </view>
+      <view class="tip-item">
+        <text class="tip-icon">🛣️</text>
+        <text class="tip-text">根据实际骑行路面选择合适的路面类型</text>
+      </view>
+      <view class="tip-item">
+        <text class="tip-icon">⚖️</text>
+        <text class="tip-text">可根据个人喜好在推荐值基础上微调 ±5 PSI</text>
+      </view>
+      <view class="tip-item">
+        <text class="tip-icon">🔧</text>
+        <text class="tip-text">定期检查胎压，确保骑行安全和性能</text>
+      </view>
+    </view>
+  </view>
+  </view>
+
+  <!-- 工具2分页 -->
+  <view class="tab-content" wx:if="{{currentTab === 'tool2'}}">
+    <view class="empty-tab">
+      <view class="empty-icon">🔧</view>
+      <view class="empty-title">工具2</view>
+      <view class="empty-subtitle">敬请期待更多实用工具</view>
+    </view>
+  </view>
+
+  <!-- 工具3分页 -->
+  <view class="tab-content" wx:if="{{currentTab === 'tool3'}}">
+    <view class="empty-tab">
+      <view class="empty-icon">⚙️</view>
+      <view class="empty-title">工具3</view>
+      <view class="empty-subtitle">敬请期待更多实用工具</view>
+    </view>
+  </view>
+</view>

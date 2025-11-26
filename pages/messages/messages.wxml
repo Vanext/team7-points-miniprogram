@@ -1,0 +1,82 @@
+<!--消息中心页面-->
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">消息中心</text>
+    <view class="header-actions">
+      <text class="mark-all-read" bindtap="markAllAsRead" wx:if="{{unreadCount[activeTab] > 0}}">
+        全部已读
+      </text>
+    </view>
+  </view>
+
+  <!-- 标签页 -->
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'all' ? 'active' : ''}}" 
+          data-tab="all" bindtap="onTabChange">
+      <text class="tab-text">全部</text>
+      <view class="badge" wx:if="{{unreadCount.all > 0}}">{{unreadCount.all}}</view>
+    </view>
+    <view class="tab-item {{activeTab === 'audit_result' ? 'active' : ''}}" 
+          data-tab="audit_result" bindtap="onTabChange">
+      <text class="tab-text">积分审核</text>
+      <view class="badge" wx:if="{{unreadCount.audit_result > 0}}">{{unreadCount.audit_result}}</view>
+    </view>
+    <view class="tab-item {{activeTab === 'exchange_status' ? 'active' : ''}}" 
+          data-tab="exchange_status" bindtap="onTabChange">
+      <text class="tab-text">兑换状态</text>
+      <view class="badge" wx:if="{{unreadCount.exchange_status > 0}}">{{unreadCount.exchange_status}}</view>
+    </view>
+    <view class="tab-item {{activeTab === 'system' ? 'active' : ''}}" 
+          data-tab="system" bindtap="onTabChange">
+      <text class="tab-text">系统消息</text>
+      <view class="badge" wx:if="{{unreadCount.system > 0}}">{{unreadCount.system}}</view>
+    </view>
+  </view>
+
+  <!-- 消息列表 -->
+  <view class="message-list">
+    <view class="message-item {{!item.isRead ? 'unread' : ''}}" 
+          wx:for="{{messages}}" wx:key="_id"
+          data-message="{{item}}" bindtap="onMessageTap">
+      
+      <!-- 消息图标 -->
+      <view class="message-icon">
+        <view class="icon-wrapper {{item.type}}">
+          <text class="icon" wx:if="{{item.type === 'audit_result'}}">✓</text>
+          <text class="icon" wx:elif="{{item.type === 'exchange_status'}}">📦</text>
+          <text class="icon" wx:else="{{item.type === 'system'}}">ℹ</text>
+        </view>
+        <view class="unread-dot" wx:if="{{!item.isRead}}"></view>
+      </view>
+
+      <!-- 消息内容 -->
+      <view class="message-content">
+        <view class="message-title">{{item.title}}</view>
+        <view class="message-text">{{item.content}}</view>
+        <view class="message-time">{{formatTime(item.createdAt)}}</view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="message-actions" catchtap="deleteMessage" data-id="{{item._id}}">
+        <text class="delete-btn">删除</text>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading-wrapper" wx:if="{{loading}}">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && messages.length === 0}}">
+      <view class="empty-icon">📭</view>
+      <text class="empty-text">暂无消息</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" wx:if="{{!loading && !hasMore && messages.length > 0}}">
+      <text class="no-more-text">没有更多消息了</text>
+    </view>
+  </view>
+</view>

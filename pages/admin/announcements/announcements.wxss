@@ -1,0 +1,223 @@
+.page-title{font-size:34rpx;font-weight:700;padding:20rpx 24rpx}
+.card{background:#fff;border-radius:16rpx;box-shadow:0 4rpx 12rpx rgba(0,0,0,.06);margin:20rpx;padding:20rpx}
+.form-row{display:flex;align-items:center;padding:14rpx 0;border-bottom:1rpx solid #eee}
+.form-row.multiline{align-items:flex-start}
+.label{flex:0 0 100rpx;color:#666}
+.input,.textarea{
+  flex:1;
+  background:#f8f9fb;
+  border: 2rpx solid var(--border-color);
+  border-radius:12rpx;
+  height: 80rpx; /* 新增：固定输入框高度 */
+  line-height: 80rpx; /* 新增：让文字垂直居中（值和 height 一致） */
+  padding:  15rpx; /* 调整：上下内边距改为 0，避免高度溢出 */
+  color: var(--text-primary);
+  transition: border-color 0.3s ease;
+}
+
+.input:focus,.textarea:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+.textarea{min-height:120rpx;line-height: 1.2;}
+
+/* 统一按钮样式 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 28rpx;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  padding: 20rpx 32rpx;
+  margin-right: 16rpx;
+  background-color: #f5f5f5;
+  color: var(--text-primary);
+}
+
+.btn:active {
+  opacity: 0.8;
+  transform: translateY(1rpx);
+}
+
+.btn.primary {
+  background-color: var(--primary-color);
+  color: white;
+  margin-top: 20rpx;
+}
+
+.btn.primary:active {
+  background-color: #0056b3;
+}
+
+.section-title{font-size:30rpx;font-weight:600;margin-bottom:12rpx}
+.list-item{padding:16rpx 0;border-bottom:1rpx solid #eee}
+.list-title{font-size:30rpx;line-height:1.4}
+.list-sub{color:#999;font-size:24rpx;margin:6rpx 0;line-height:1.3}
+.list-content{color:#333;white-space:pre-wrap;line-height:1.5;margin-top:8rpx}
+.actions{display:flex;gap:16rpx;margin-top:10rpx}
+.empty{color:#999;text-align:center;padding:20rpx 0}
+
+.actions button{margin-right:16rpx;font-size:24rpx}
+
+/* 编辑弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 40rpx;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16rpx;
+  width: 95%;
+  max-width: 700rpx;
+  max-height: 95vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40rpx 40rpx 24rpx;
+  border-bottom: 1rpx solid #eee;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-close {
+  font-size: 42rpx;
+  color: #999;
+  cursor: pointer;
+  line-height: 1;
+  padding: 8rpx;
+  min-width: 24rpx;
+  min-height: 42rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-body {
+  flex: 1;
+  height: 400rpx;
+  min-height: 400rpx;
+  max-height: calc(90vh - 300rpx);
+}
+
+.modal-body-content {
+  padding: 24rpx;
+  padding-bottom: 60rpx;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 24rpx 20rpx 20rpx;
+  border-top: rpx solid #eee;
+  flex-shrink: 0;
+}
+
+.modal-footer .btn {
+  margin-top: 0;
+  margin-left: 24rpx;
+  min-height: 88rpx;
+  padding: 24rpx 40rpx;
+  font-size: 32rpx;
+  min-width: 160rpx;
+}
+
+.modal-footer .btn.secondary {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+/* 弹窗内表单样式优化 */
+.modal-body .form-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #eee;
+  margin-bottom: 4rpx;
+}
+
+.modal-body .form-row.multiline {
+  align-items: flex-start;
+  padding: 16rpx 0 20rpx;
+}
+
+.modal-body .label {
+  flex: 0 0 140rpx;
+  color: #666;
+  font-size: 30rpx;
+  font-weight: 500;
+  padding-right: 16rpx;
+}
+
+.modal-body .input {
+  flex: 1;
+  background: #f8f9fb;
+  border: 2rpx solid #e1e5e9;
+  border-radius: 12rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 16rpx;
+  color: #333;
+  font-size: 30rpx;
+  transition: border-color 0.3s ease;
+  min-height: 80rpx;
+}
+
+.modal-body .textarea {
+  flex: 1;
+  background: #f8f9fb;
+  border: 2rpx solid #e1e5e9;
+  border-radius: 12rpx;
+  min-height: 240rpx;
+  padding: 16rpx;
+  color: #333;
+  font-size: 30rpx;
+  line-height: 1.5;
+  transition: border-color 0.3s ease;
+}
+
+.modal-body .input:focus,
+.modal-body .textarea:focus {
+  border-color: var(--primary-color, #007aff);
+  outline: none;
+}
+
+.modal-body .picker {
+  flex: 1;
+  background: #f8f9fb;
+  border: 2rpx solid #e1e5e9;
+  border-radius: 12rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 16rpx;
+  color: #333;
+  font-size: 30rpx;
+  min-height: 80rpx;
+  display: flex;
+  align-items: center;
+}
+.home-switch-tip{font-size:22rpx;color:#999}

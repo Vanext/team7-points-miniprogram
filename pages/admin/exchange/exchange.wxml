@@ -1,0 +1,53 @@
+<view class="container">
+  <view class="page-title">兑换处理</view>
+
+  <view class="tabs">
+    <view class="tab {{status==='pending'?'active':''}}" data-status="pending" bindtap="onTab">待处理</view>
+    <view class="tab {{status==='shipped'?'active':''}}" data-status="shipped" bindtap="onTab">已发货</view>
+    <view class="tab {{status==='completed'?'active':''}}" data-status="completed" bindtap="onTab">已完成</view>
+    <view class="tab {{status==='all'?'active':''}}" data-status="all" bindtap="onTab">全部</view>
+  </view>
+
+  <view class="card">
+    <block wx:for="{{list}}" wx:key="_id">
+      <view class="item">
+        <view class="row">
+          <text class="name">{{item.productName}}</text>
+          <text class="badge {{item.status}}">{{item.displayStatus}}</text>
+        </view>
+        <view class="row meta">
+          <text>数量：{{item.quantity}}</text>
+          <text>积分：{{item.pointsSpent}}</text>
+          <text>用户：{{item.userNickName || item._openid}}</text>
+        </view>
+        <view class="row">
+          <text>方式：{{item.recipient.method === 'mail' ? '邮寄' : '当面'}}</text>
+          <text>收件人：{{item.recipient.name}}（{{item.recipient.phone}}）</text>
+        </view>
+        <view class="row" wx:if="{{item.selectedSize}}">
+          <text>尺码：{{item.selectedSize}}</text>
+        </view>
+        <view class="row" wx:if="{{item.recipient.method==='mail'}}">
+          <text>地址：{{item.recipient.address}}</text>
+        </view>
+        <view class="row" wx:if="{{item.recipient.remark}}">
+          <text>备注：{{item.recipient.remark}}</text>
+        </view>
+
+        <view class="actions" wx:if="{{status==='pending'}}">
+          <button class="btn btn-primary" bindtap="onShip" data-id="{{item._id}}">标记发货</button>
+          <button class="btn btn-success" bindtap="onConfirmDone" data-id="{{item._id}}">当面完成</button>
+          <button class="btn btn-danger" bindtap="onCancel" data-id="{{item._id}}">取消申请</button>
+        </view>
+        <view class="actions" wx:if="{{status==='shipped'}}">
+          <button class="btn btn-success" bindtap="onConfirmDone" data-id="{{item._id}}">确认完成</button>
+        </view>
+        <view class="row" wx:if="{{item.status==='shipped' && item.logistics && (item.logistics.company || item.logistics.trackingNumber)}}">
+          <text>物流公司：{{item.logistics.company || '—'}}</text>
+          <text style="margin-left: 16rpx;">单号：{{item.logistics.trackingNumber || '—'}}</text>
+        </view>
+      </view>
+    </block>
+    <view wx:if="{{list.length===0}}" class="empty">暂无记录</view>
+  </view>
+</view>

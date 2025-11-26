@@ -1,0 +1,95 @@
+<!--pages/store-detail/store-detail.wxml-->
+<view class="container">
+  <view class="product-header" wx:if="{{product}}">
+    <image class="product-image" src="{{product.image}}" mode="aspectFill"></image>
+    <view class="product-info">
+      <text class="product-name">{{product.name}}</text>
+      <text class="product-desc">{{product.description || '—'}}</text>
+      <view class="product-meta">
+        <text class="product-points">所需积分：{{product.points}}</text>
+        <text class="product-stock">库存：{{product.stock}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="user-points" wx:if="{{userInfo}}">
+    <text>我的积分：<text class="highlight">{{userInfo.totalPoints || 0}}</text></text>
+  </view>
+
+  <!-- 收件信息表单 -->
+  <view class="form-card" wx:if="{{userInfo && showForm}}" id="exchangeForm">
+    <view class="form-title">兑换收件信息</view>
+
+    <view class="form-row">
+      <view class="row-label">兑换方式</view>
+      <radio-group class="row-value" bindchange="onDeliveryChange">
+        <label class="radio-item">
+          <radio value="mail" checked="{{deliveryMethod === 'mail'}}"></radio>
+          <text>邮寄</text>
+        </label>
+        <label class="radio-item">
+          <radio value="in_person" checked="{{deliveryMethod === 'in_person'}}"></radio>
+          <text>当面</text>
+        </label>
+      </radio-group>
+    </view>
+
+    <view class="form-row">
+      <view class="row-label">收件人</view>
+      <input class="row-input" 
+             placeholder="请输入您的真实姓名" 
+             value="{{receiverName}}" 
+             data-field="receiverName" 
+             bindinput="onInputChange"
+             style="height: 80rpx; line-height: 80rpx; padding: 0 20rpx;"/>
+    </view>
+    <view class="form-row">
+      <view class="row-label">联系方式</view>
+      <input class="row-input" 
+              placeholder="请输入您的手机号码" 
+              value="{{receiverPhone}}" 
+              type="number" 
+              maxlength="11" 
+              data-field="receiverPhone" 
+              bindinput="onInputChange"
+              style="height: 80rpx; line-height: 80rpx; padding: 0 20rpx;"/>
+    </view>
+
+    <view class="form-row" wx:if="{{deliveryMethod === 'mail'}}">
+      <view class="row-label">收件地址</view>
+      <textarea class="row-textarea" 
+                placeholder="请输入详细的收件地址，包括省市区和具体门牌号" 
+                value="{{receiverAddress}}" 
+                data-field="receiverAddress" 
+                bindinput="onInputChange"
+                style="height: 120rpx; line-height: 40rpx; padding: 20rpx;"/>
+    </view>
+
+    <view class="form-row">
+      <view class="row-label">备注信息</view>
+      <input class="row-input" 
+            placeholder="选填：如颜色偏好或其他特殊要求" 
+            value="{{remark}}" 
+            data-field="remark" 
+            bindinput="onInputChange"
+            style="height: 80rpx; line-height: 80rpx; padding: 0 20rpx;"/>
+    </view>
+
+    <!-- 尺码选择（仅服装类商品显示） -->
+    <view class="form-row" wx:if="{{product && product.sizesEnabled}}">
+      <view class="row-label">尺码</view>
+      <view class="row-value">
+        <radio-group bindchange="onSizeChange">
+          <label class="radio-item" wx:for="{{product.sizes && product.sizes.length ? product.sizes : ['XS','S','M','L','XL','2XL','3XL']}}" wx:key="*this">
+            <radio value="{{item}}" checked="{{selectedSize === item}}" disabled="{{(product.sizeStocks && product.sizeStocks[item] || 0) <= 0}}"></radio>
+            <text>{{item}}（{{(product.sizeStocks && product.sizeStocks[item]) || 0}}）</text>
+          </label>
+        </radio-group>
+      </view>
+    </view>
+  </view>
+
+  <view class="actions">
+    <button class="exchange-btn" type="primary" bindtap="onExchange" disabled="{{!canExchange}}">{{exchangeBtnText}}</button>
+  </view>
+</view>

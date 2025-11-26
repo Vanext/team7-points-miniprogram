@@ -1,0 +1,49 @@
+<view class="course-page">
+  <view class="header">
+    <image class="banner-logo" src="{{logoUrl}}" mode="widthFix"></image>
+    <text class="title">IRONMAN70.3横琴 · 赛道详情与参赛指导</text>
+  </view>
+
+  <view class="section">
+    <text class="section-title">游泳 · 1.9km</text>
+    <image class="course-img" src="{{swimUrl}}" mode="widthFix"></image>
+    <text class="desc">赛道位于横琴内水系，整体平缓，转点清晰。建议开赛前定位标志建筑，保持每4-8次划水一次抬头校正方向，抓水与身体滚动为重点。</text>
+    <view class="tips">
+      <text>• 出发采用滚动发枪，避免心率过快</text>
+      <text>• 视线找到远端浮标，靠近内线减少额外距离</text>
+      <text>• 3月建议短袖铁三服，有使用防寒泳衣可能</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">骑行 · 90km</text>
+    <image class="course-img" src="{{bikeUrl}}" mode="widthFix"></image>
+    <text class="desc">赛道以城市道路为主，路面整体良好，多直线段适合稳定功率输出。注意桥面与转角的节奏变化，风向可能影响前半程。</text>
+    <view class="tips">
+      <text>• 功率控制：目标IF 0.75-0.85，踏频80-95rpm</text>
+      <text>• 补给策略：每20-30分钟摄入碳水与电解质</text>
+      <text>• 转弯与U形弯提前减速，避免急加速</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">跑步 · 21.1km</text>
+    <image class="course-img" src="{{runUrl}}" mode="widthFix"></image>
+    <text class="desc">跑步为城市环线，补给点布局合理。建议前10km稳住节奏，后段根据状态逐步加速，注意气温与补水。</text>
+    <view class="tips">
+      <text>• 配速策略：前半程接近训练节奏跑，后半程递增</text>
+      <text>• 补给与降温：每站少量补水，适当降温</text>
+      <text>• 姿态与步频：维持中等步幅与高步频，核心稳定</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">换项与综合建议</text>
+    <text class="desc">比赛前梳理补给与装备清单，练习换项流程。比赛日关注环境因素（风向、气温、湿度），动态调整节奏与补给。</text>
+    <view class="tips">
+      <text>• T1/T2流程卡：鞋、头盔、号码带、补给按顺序摆放</text>
+      <text>• 心率与主观感受并用，避免前段兴奋过冲</text>
+      <text>• 如遇高温，适当降低目标配速并增加补水</text>
+    </view>
+  </view>
+</view>

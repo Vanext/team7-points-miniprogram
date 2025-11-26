@@ -1,0 +1,38 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="towelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF7043;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF5722;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="towelTexture" patternUnits="userSpaceOnUse" width="4" height="4">
+      <rect width="4" height="4" fill="#FF6D40"/>
+      <circle cx="2" cy="2" r="0.5" fill="#FF8A65"/>
+    </pattern>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="300" height="300" fill="#F5F5F5"/>
+  
+  <!-- Towel main body -->
+  <rect x="60" y="80" width="180" height="140" rx="8" ry="8" fill="url(#towelGradient)" stroke="#D84315" stroke-width="2"/>
+  
+  <!-- Towel texture -->
+  <rect x="65" y="85" width="170" height="130" rx="5" ry="5" fill="url(#towelTexture)" opacity="0.3"/>
+  
+  <!-- Towel stripes -->
+  <rect x="70" y="90" width="160" height="4" fill="#FFAB91"/>
+  <rect x="70" y="100" width="160" height="4" fill="#FFAB91"/>
+  <rect x="70" y="200" width="160" height="4" fill="#FFAB91"/>
+  <rect x="70" y="210" width="160" height="4" fill="#FFAB91"/>
+  
+  <!-- Team7 logo area -->
+  <rect x="110" y="130" width="80" height="40" rx="5" ry="5" fill="white" opacity="0.9"/>
+  <text x="150" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#1A237E" font-weight="bold">Team7</text>
+  <text x="150" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1A237E">运动毛巾</text>
+  
+  <!-- Towel corner fold -->
+  <polygon points="220,100 240,80 240,100" fill="#E64A19"/>
+  
+  <!-- Shadow -->
+  <ellipse cx="150" cy="240" rx="80" ry="15" fill="#BDBDBD" opacity="0.3"/>
+</svg>

@@ -1,0 +1,8 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "运动员记录",
+  "navigationStyle": "custom",
+  "backgroundColor": "#f8fafc",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50
+}

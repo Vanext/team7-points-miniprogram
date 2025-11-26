@@ -1,0 +1,30 @@
+.container { padding: 24rpx; background: #f5f7fa; min-height: 100vh; }
+.list-header { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 12rpx; padding: 24rpx 32rpx; background: #fff; border-radius: 16rpx; box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.08); margin-bottom: 24rpx; }
+.header-info { display: flex; align-items: center; gap: 16rpx; }
+.section-title { font-size: 32rpx; font-weight: 700; color: #1a237e; }
+.member-count-badge { background: #1a237e; color: #fff; padding: 8rpx 16rpx; border-radius: 20rpx; font-size: 24rpx; font-weight: 600; }
+.sort-actions { display: flex; gap: 12rpx; }
+.sort-btn { height: 56rpx; padding: 0 20rpx; border-radius: 12rpx; border: 1rpx solid #e1e8ed; background: #f8f9fb; color: #2c3e50; font-size: 24rpx; }
+.sort-btn.active { background: linear-gradient(135deg,#1a237e,#3f51b5); color: #fff; border: none; }
+.members-grid { display: flex; flex-direction: column; gap: 20rpx; }
+.member-card { background: #fff; border-radius: 20rpx; box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.08); overflow: hidden; }
+.card-header { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 28rpx; background: #fafbfc; border-bottom: 1rpx solid #e1e8ed; }
+.user-block { display: flex; align-items: center; }
+.name-line { display: flex; gap: 12rpx; align-items: center; }
+.user-name { font-size: 28rpx; color: #2c3e50; }
+.badge { font-size: 22rpx; padding: 6rpx 12rpx; border-radius: 12rpx; }
+.badge.pending { background: #fff3cd; color: #856404; }
+.badge.approved { background: #d4edda; color: #155724; }
+.badge.rejected { background: #f8d7da; color: #721c24; }
+.metrics { display: flex; align-items: center; }
+.points-row { display: flex; align-items: center; gap: 10rpx; }
+.points-label { font-size: 24rpx; color: #7f8c8d; }
+.points-value { font-size: 26rpx; color: #2c3e50; font-weight: 600; }
+.card-actions { padding: 20rpx 24rpx; background: #fafbfc; display: flex; gap: 12rpx; }
+.action-btn { display: inline-flex; align-items: center; height: 64rpx; padding: 0 24rpx; border-radius: 12rpx; font-weight: 600; }
+.admin-btn.add { background: linear-gradient(135deg,#4caf50,#66bb6a); color: #fff; }
+.lock-btn.lock { background: linear-gradient(135deg,#f44336,#ef5350); color: #fff; }
+.no-access-card { background: #fff; border-radius: 16rpx; padding: 80rpx 40rpx; text-align: center; box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.08); margin-top: 100rpx; }
+.no-access-icon { font-size: 80rpx; margin-bottom: 30rpx; display: block; }
+.no-access-title { font-size: 32rpx; font-weight: 600; color: #2c3e50; margin-bottom: 15rpx; display: block; }
+.no-access-desc { font-size: 26rpx; color: #7f8c8d; display: block; }

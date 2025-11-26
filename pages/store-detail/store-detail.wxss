@@ -1,0 +1,142 @@
+/* pages/store-detail/store-detail.wxss */
+.container {
+  padding: 20rpx;
+}
+
+.product-header {
+  background-color: #fff;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.product-image {
+  width: 100%;
+  height: 420rpx;
+  background: #f5f5f5;
+}
+
+.product-info {
+  padding: 20rpx;
+}
+
+.product-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.product-desc {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  margin-bottom: 12rpx;
+}
+
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+}
+
+.product-points {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.user-points {
+  margin-top: 20rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 20rpx;
+}
+
+.user-points .highlight { color: var(--primary-color); }
+
+.actions { margin-top: 30rpx; }
+
+.exchange-btn { width: 100%; }
+
+.form-card {
+  background: #fff;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24rpx 28rpx;
+  margin: 20rpx 0 40rpx;
+}
+
+.form-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid var(--border-color);
+}
+
+.form-row:last-child {
+  border-bottom: none;
+}
+
+.row-label {
+  flex: 0 0 160rpx;
+  color: var(--text-secondary);
+  font-size: 26rpx;
+}
+
+.row-value {
+  flex: 1;
+}
+
+.row-value radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx 20rpx;
+}
+
+.radio-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-right: 0;
+}
+
+.row-input {
+  flex: 1;
+  background: #f8f9fb;
+  border: 2rpx solid var(--border-color);
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+  color: var(--text-primary);
+  font-size: 28rpx;
+  transition: border-color 0.3s ease;
+}
+
+.row-input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.row-textarea {
+  flex: 1;
+  min-height: 160rpx;
+  padding: 16rpx 20rpx;
+  background: #f8f9fb;
+  border: 2rpx solid var(--border-color);
+  border-radius: 12rpx;
+  color: var(--text-primary);
+  font-size: 28rpx;
+  transition: border-color 0.3s ease;
+}
+
+.row-textarea:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.highlight {
+  color: var(--primary-color);
+  font-weight: 600;
+}

@@ -1,0 +1,96 @@
+<!--pages/athlete-records/athlete-records.wxml-->
+<view class="container">
+  <!-- 页面头部 -->
+  <view class="header">
+    <view class="header-bg">
+      <view class="header-content">
+        <view class="back-btn" bindtap="onBack">
+          <text class="back-icon">‹</text>
+        </view>
+        <view class="header-info">
+          <text class="header-title">{{userInfo.nickName}}</text>
+          <text class="header-subtitle">Ta的铁三动态</text>
+        </view>
+        <view class="share-btn" bindtap="onShareRecord">
+          <text class="share-icon">⋯</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error-container">
+    <text class="error-icon">⚠</text>
+    <text class="error-text">{{error}}</text>
+    <button class="retry-btn" bindtap="loadAthleteRecords">重试</button>
+  </view>
+
+  <!-- 主要内容 -->
+  <view wx:else class="content">
+    <!-- 统计概览 -->
+    <view class="stats-overview">
+      <view class="stats-item">
+        <text class="stats-number">{{totalRaces}}</text>
+        <text class="stats-label">完赛次数</text>
+      </view>
+      <view class="stats-divider"></view>
+      <view class="stats-item">
+        <text class="stats-number">{{totalPoints}}</text>
+        <text class="stats-label">总积分</text>
+      </view>
+    </view>
+
+    <!-- 年份选择器 -->
+    <view class="year-selector" wx:if="{{availableYears.length > 1}}">
+      <text class="year-label">年份：</text>
+      <picker mode="selector" range="{{availableYears}}" value="{{availableYears.indexOf(selectedYear)}}" bindchange="onYearChange">
+        <view class="year-picker">
+          <text class="year-text">{{selectedYear}}</text>
+          <text class="year-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 年度统计 -->
+    <view class="yearly-stats" wx:if="{{yearlyStats[selectedYear]}}">
+      <view class="yearly-header">
+        <text class="yearly-title">{{selectedYear}}年战绩</text>
+        <view class="yearly-summary">
+          <text class="yearly-races">{{yearlyStats[selectedYear].totalRaces}}场</text>
+          <text class="yearly-points">{{yearlyStats[selectedYear].totalPoints.toFixed(2)}}分</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 比赛记录列表 -->
+    <view class="records-list" wx:if="{{yearlyStats[selectedYear] && yearlyStats[selectedYear].races.length > 0}}">
+      <view class="record-item" wx:for="{{yearlyStats[selectedYear].races}}" wx:key="id">
+        <view class="record-header">
+          <view class="record-info">
+            <text class="record-name">{{item.name}}</text>
+            <view class="record-meta">
+              <text class="record-type">{{item.type}}</text>
+              <text class="record-date">{{item.date}}</text>
+            </view>
+          </view>
+          <view class="record-result">
+            <text class="record-time">{{item.time}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:elif="{{!yearlyStats[selectedYear] || yearlyStats[selectedYear].races.length === 0}}" class="empty-state">
+      <text class="empty-icon">🏃‍♂️</text>
+      <text class="empty-text">{{selectedYear}}年暂无比赛记录</text>
+      <text class="empty-desc">期待更多精彩表现</text>
+    </view>
+  </view>
+</view>

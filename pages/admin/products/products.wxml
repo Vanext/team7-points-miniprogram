@@ -1,0 +1,140 @@
+<view class="container">
+  <view class="admin-header">
+    <text class="title">商品管理</text>
+  </view>
+
+  <view class="list-actions" style="display:flex; justify-content:flex-end; align-items:center; margin: 0 0 16rpx 0;">
+    <button class="btn btn-primary create-btn" bindtap="onToggleCreateForm">新增商品</button>
+  </view>
+  <view class="form card" wx:if="{{showCreateForm}}">
+    <view class="form-row">
+      <input class="input" placeholder="请输入商品名称，建议简洁明了" value="{{form.name}}" bindinput="onInputName"/>
+    </view>
+    <view class="form-row">
+      <text class="label">所需积分</text>
+      <input class="input" type="number" placeholder="请输入兑换所需的积分数量" value="{{form.points}}" bindinput="onInputPoints"/>
+    </view>
+    <view class="form-row">
+      <text class="label">库存数量</text>
+      <input class="input" type="number" placeholder="请输入商品库存数量" value="{{form.stock}}" bindinput="onInputStock" disabled="{{form.sizesEnabled}}"/>
+    </view>
+    <view class="form-row">
+      <view class="image-upload-section">
+        <text class="upload-label">商品图片</text>
+        <view class="image-upload-container">
+          <view class="image-preview" wx:if="{{form.image}}">
+            <image src="{{form.image}}" mode="aspectFill" class="preview-img"/>
+            <view class="image-delete" bindtap="removeFormImage">×</view>
+          </view>
+          <view class="upload-btn" bindtap="chooseFormImage" wx:if="{{!form.image}}">
+            <text class="upload-icon">+</text>
+            <text class="upload-text">选择图片</text>
+          </view>
+        </view>
+        <text class="upload-tip">或手动输入图片URL</text>
+        <input class="input url-input" placeholder="图片URL（可选）" value="{{form.imageUrl}}" bindinput="onInputImageUrl"/>
+      </view>
+    </view>
+    <view class="form-row">
+      <text class="label">商品描述</text>
+      <input class="input" placeholder="请输入商品详细描述（可选）" value="{{form.description}}" bindinput="onInputDescription"/>
+    </view>
+    <view class="form-row section-header">
+      <text class="section-title">尺码</text>
+      <view class="size-toggle">
+        <switch checked="{{form.sizesEnabled}}" bindchange="onToggleSizes" color="#1a237e"/>
+        <text class="tip">启用后显示尺码选项（XS/S/M/L/XL/2XL/3XL）</text>
+      </view>
+    </view>
+    <view class="form-row" wx:if="{{form.sizesEnabled}}">
+      <view class="size-stocks">
+        <view class="size-item" wx:for="{{['XS','S','M','L','XL','2XL','3XL']}}" wx:key="*this">
+          <text class="size-label">{{item}}</text>
+          <input class="input size-input" type="number" placeholder="库存" value="{{form.sizeStocks && form.sizeStocks[item] || ''}}" data-size="{{item}}" bindinput="onSizeStockInput"/>
+        </view>
+      </view>
+    </view>
+    <button class="btn btn-primary" bindtap="onCreate" loading="{{creating}}">新增商品</button>
+  </view>
+
+  <view class="card list">
+    <view class="list-header">
+      <text>商品列表</text>
+      <button class="btn" size="mini" bindtap="onRefresh" loading="{{loading}}" style="margin-left: 12rpx">刷新</button>
+    </view>
+    <block wx:for="{{products}}" wx:key="_id">
+      <view class="product-item">
+        <image class="thumb" src="{{item.image || '/images/default-product.svg'}}" mode="aspectFill"/>
+        <view class="meta">
+          <text class="name">{{item.name}}</text>
+          <text class="sub">所需积分：{{item.points}}｜库存：{{item.stock}}｜{{item.isActive ? '上架' : '下架'}} </text>
+        </view>
+        <view class="actions">
+          <button class="btn" size="mini" bindtap="onOpenEdit" data-item="{{item}}">编辑</button>
+          <button class="btn" size="mini" bindtap="onToggleActive" data-id="{{item._id}}" data-active="{{item.isActive}}">{{item.isActive ? '下架' : '上架'}}</button>
+          <button class="btn warn" size="mini" bindtap="onDelete" data-id="{{item._id}}">删除</button>
+        </view>
+      </view>
+    </block>
+  </view>
+</view>
+
+<!-- 编辑弹层 -->
+<view wx:if="{{showEdit}}" class="modal-mask" catchtouchmove="true">
+  <view class="modal">
+    <view class="modal-title">编辑商品</view>
+    <scroll-view scroll-y class="modal-scroll">
+    <view class="form-row">
+      <text class="label">名称</text>
+      <input class="input" placeholder="请输入商品名称" value="{{editForm.name}}" bindinput="onEditName"/>
+    </view>
+    <view class="form-row">
+      <text class="label">积分</text>
+      <input class="input" placeholder="请输入所需积分" type="number" value="{{editForm.points}}" bindinput="onEditPoints"/>
+    </view>
+    <view class="form-row">
+      <text class="label">库存</text>
+      <input class="input" placeholder="请输入库存数量" type="number" value="{{editForm.stock}}" bindinput="onEditStock" disabled="{{editForm.sizesEnabled}}"/>
+    </view>
+    <view class="form-row">
+      <view class="image-upload-section">
+        <text class="upload-label">商品图片</text>
+        <view class="image-upload-container">
+          <view class="image-preview" wx:if="{{editForm.image}}">
+            <image src="{{editForm.image}}" mode="aspectFill" class="preview-img"/>
+            <view class="image-delete" bindtap="removeEditImage">×</view>
+          </view>
+          <view class="upload-btn" bindtap="chooseEditImage" wx:if="{{!editForm.image}}">
+            <text class="upload-icon">+</text>
+            <text class="upload-text">选择图片</text>
+          </view>
+        </view>
+        <text class="upload-tip">或手动输入图片URL</text>
+        <input class="input url-input" placeholder="图片URL（可选）" value="{{editForm.imageUrl}}" bindinput="onEditImageUrl"/>
+      </view>
+    </view>
+    <view class="form-row">
+      <input class="input" placeholder="描述（可选）" value="{{editForm.description}}" bindinput="onEditDescription"/>
+    </view>
+    <view class="form-row section-header">
+      <text class="section-title">尺码</text>
+      <view class="size-toggle">
+        <switch checked="{{editForm.sizesEnabled}}" bindchange="onEditToggleSizes" color="#1a237e"/>
+        <text class="tip">启用后显示尺码选项（XS/S/M/L/XL/2XL/3XL）</text>
+      </view>
+    </view>
+    <view class="form-row" wx:if="{{editForm.sizesEnabled}}">
+      <view class="size-stocks">
+        <view class="size-item" wx:for="{{['XS','S','M','L','XL','2XL','3XL']}}" wx:key="*this">
+          <text class="size-label">{{item}}</text>
+          <input class="input size-input" type="number" placeholder="库存" value="{{editForm.sizeStocks && editForm.sizeStocks[item] || ''}}" data-size="{{item}}" bindinput="onEditSizeStockInput"/>
+        </view>
+      </view>
+    </view>
+    <view class="modal-actions">
+      <button class="btn" size="mini" bindtap="onCloseEdit">取消</button>
+      <button class="btn btn-primary" size="mini" loading="{{updating}}" bindtap="onSubmitEdit">保存</button>
+    </view>
+    </scroll-view>
+  </view>
+</view>

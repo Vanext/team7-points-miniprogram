@@ -1,0 +1,46 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="medalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFC107;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF8F00;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="ribbonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1976D2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1565C0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="300" height="300" fill="#F5F5F5"/>
+  
+  <!-- Ribbon -->
+  <rect x="130" y="50" width="40" height="120" fill="url(#ribbonGradient)"/>
+  <polygon points="130,170 150,190 170,170 170,50 130,50" fill="url(#ribbonGradient)"/>
+  
+  <!-- Medal outer ring -->
+  <circle cx="150" cy="180" r="60" fill="url(#medalGradient)" stroke="#E65100" stroke-width="3"/>
+  
+  <!-- Medal inner ring -->
+  <circle cx="150" cy="180" r="45" fill="#FFF8E1" stroke="#FFB300" stroke-width="2"/>
+  
+  <!-- Medal center -->
+  <circle cx="150" cy="180" r="35" fill="url(#medalGradient)"/>
+  
+  <!-- Star in center -->
+  <polygon points="150,155 155,170 170,170 158,180 163,195 150,185 137,195 142,180 130,170 145,170" fill="white"/>
+  
+  <!-- Team7 text -->
+  <text x="150" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white" font-weight="bold">Team7</text>
+  <text x="150" y="215" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="white">纪念奖牌</text>
+  
+  <!-- Medal edge details -->
+  <circle cx="150" cy="180" r="58" fill="none" stroke="#FFB300" stroke-width="1" opacity="0.5"/>
+  <circle cx="150" cy="180" r="52" fill="none" stroke="#FFB300" stroke-width="1" opacity="0.5"/>
+  
+  <!-- Ribbon shine -->
+  <rect x="135" y="55" width="8" height="110" fill="white" opacity="0.3"/>
+  
+  <!-- Shadow -->
+  <ellipse cx="150" cy="260" rx="50" ry="15" fill="#BDBDBD" opacity="0.3"/>
+</svg>

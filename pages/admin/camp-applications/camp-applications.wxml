@@ -1,0 +1,47 @@
+<view class="container">
+  <block wx:if="{{!isAdmin}}">
+    <view class="no-access-card">
+      <view class="no-access-icon">🔒</view>
+      <view class="no-access-title">权限不足</view>
+      <view class="no-access-desc">只有管理员才能访问此页面</view>
+    </view>
+  </block>
+  <block wx:else>
+    <view class="list-header">
+      <view class="header-info">
+        <text class="section-title">训练营申请</text>
+        <view class="member-count-badge">{{list.length}}</view>
+      </view>
+      <view class="sort-actions">
+        <button class="sort-btn {{currentTab==='pending'?'active':''}}" bindtap="onTabChange" data-id="pending">待审核</button>
+        <button class="sort-btn {{currentTab==='approved'?'active':''}}" bindtap="onTabChange" data-id="approved">已通过</button>
+        <button class="sort-btn {{currentTab==='rejected'?'active':''}}" bindtap="onTabChange" data-id="rejected">已拒绝</button>
+      </view>
+    </view>
+
+    <view class="members-grid">
+      <block wx:for="{{list}}" wx:key="_id">
+        <view class="member-card">
+          <view class="card-header">
+            <view class="user-block">
+              <view class="name-line">
+                <text class="user-name">{{item.nickName || '微信用户'}}</text>
+                <text class="badge {{item.status}}">{{item.status === 'pending' ? '待审核' : (item.status==='approved' ? '已通过' : '已拒绝')}}</text>
+              </view>
+            </view>
+            <view class="metrics">
+              <view class="points-row">
+                <text class="points-label">申请时间</text>
+                <text class="points-value">{{item.applyTimeText}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="card-actions actions-grid">
+            <button class="action-btn admin-btn {{currentTab==='pending'?'add':'remove'}}" wx:if="{{currentTab==='pending'}}" data-id="{{item._id}}" bindtap="approve">通过</button>
+            <button class="action-btn lock-btn lock" wx:if="{{currentTab==='pending'}}" data-id="{{item._id}}" bindtap="reject">拒绝</button>
+          </view>
+        </view>
+      </block>
+    </view>
+  </block>
+</view>

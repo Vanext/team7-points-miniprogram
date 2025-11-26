@@ -9,7 +9,7 @@ App({
     } else {
       // 初始化云开发
       wx.cloud.init({
-        env: 'cloudbase-0gvjuae479205e8',
+        env: 'cloudbase-0gvjuqae479205e8',
         traceUser: true
       })
       console.log('云开发初始化成功')
@@ -40,7 +40,7 @@ App({
     isAdmin: false,
     version: '1.0.0',
     systemInfo: {},
-    cloudEnv: 'cloudbase-0gvjuae479205e8'
+    cloudEnv: 'cloudbase-0gvjuqae479205e8'
   },
 
   // 检查登录状态
@@ -51,7 +51,8 @@ App({
     if (token && userInfo) {
       this.globalData.token = token
       this.globalData.userInfo = userInfo
-      this.globalData.isAdmin = userInfo.role === 'admin'
+      // 修复管理员状态读取：以数据库中的 isAdmin 布尔值为准
+      this.globalData.isAdmin = userInfo.isAdmin === true
       console.log('用户已登录:', userInfo.nickName)
     } else {
       console.log('用户未登录')
@@ -103,47 +104,59 @@ App({
     }
   },
 
-  // 用户登录方法
+  // 用户登录方法（注册并以数据库为准回填资料）
   login() {
     return new Promise((resolve, reject) => {
-      // 检查是否支持新的用户信息获取方式
+      const cloudEnv = this.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const completeLogin = async (rawUserInfo) => {
+        try {
+          wx.showLoading({ title: '登录中...' })
+          // 注册/更新用户资料到数据库
+          await wx.cloud.callFunction({ name: 'registerUser', config: { env: cloudEnv }, data: { userInfo: rawUserInfo } })
+          // 获取 openid
+          const { result: loginRes } = await wx.cloud.callFunction({ name: 'login', config: { env: cloudEnv } })
+          const openid = loginRes && loginRes.openid
+          if (!openid) throw new Error('未获取到openid')
+          // 以数据库为准回填用户资料
+          const db = wx.cloud.database({ env: cloudEnv })
+          const ures = await db.collection('users').where({ _openid: openid }).limit(1).get()
+          const dbUser = (ures.data && ures.data[0]) || null
+          if (!dbUser) throw new Error('用户未注册')
+          this.globalData.userInfo = { ...dbUser }
+          this.globalData.isAdmin = dbUser.isAdmin === true
+          wx.setStorageSync('userInfo', this.globalData.userInfo)
+          // 生成并保存模拟 token（保持原行为）
+          const token = 'mock_token_' + Date.now()
+          this.globalData.token = token
+          wx.setStorageSync('token', token)
+          wx.hideLoading()
+          resolve(this.globalData.userInfo)
+        } catch (err) {
+          wx.hideLoading()
+          reject(err)
+        }
+      }
+
       if (wx.getUserProfile) {
         wx.getUserProfile({
           desc: '用于完善会员资料',
-          success: (res) => {
-            console.log('获取用户信息成功:', res.userInfo)
-            this.saveUserInfo(res.userInfo)
-            resolve(res.userInfo)
-          },
-          fail: (err) => {
-            console.error('获取用户信息失败:', err)
-            reject(err)
-          }
+          success: (res) => { completeLogin(res.userInfo) },
+          fail: (err) => { reject(err) }
         })
       } else {
-        // 兼容旧版本
         wx.getUserInfo({
-          success: (res) => {
-            console.log('获取用户信息成功:', res.userInfo)
-            this.saveUserInfo(res.userInfo)
-            resolve(res.userInfo)
-          },
-          fail: (err) => {
-            console.error('获取用户信息失败:', err)
-            reject(err)
-          }
+          success: (res) => { completeLogin(res.userInfo) },
+          fail: (err) => { reject(err) }
         })
       }
     })
   },
 
-  // 保存用户信息
+  // 保存用户信息（保留方法以兼容旧调用，但不覆盖数据库字段）
   saveUserInfo(userInfo) {
-    // 保存用户信息
-    this.globalData.userInfo = userInfo
-    wx.setStorageSync('userInfo', userInfo)
-    
-    // 生成模拟token（实际项目中应该调用后端接口）
+    const merged = { ...(this.globalData.userInfo || {}), ...(userInfo || {}) }
+    this.globalData.userInfo = merged
+    wx.setStorageSync('userInfo', merged)
     const token = 'mock_token_' + Date.now()
     this.globalData.token = token
     wx.setStorageSync('token', token)
@@ -157,6 +170,13 @@ App({
       return authSetting
     }
     return {}
+  },
+
+  // 格式化时间
+  formatTime(date) {
+    if (!date) return ''
+    const d = new Date(date)
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
   },
 
   // 统一提示方法

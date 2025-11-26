@@ -1,0 +1,170 @@
+<!--pages/camp/home/home.wxml-->
+<view class="camp-home">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error-container">
+    <text class="error-text">{{error}}</text>
+    <button wx:if="{{error === '仅正式会员可访问训练营功能'}}" class="upgrade-btn" bindtap="contactCoach">
+      升级会员
+    </button>
+    <button wx:else class="retry-btn" bindtap="loadCampData">重新加载</button>
+  </view>
+
+  <!-- 无权限状态 -->
+  <view wx:elif="{{!hasAccess}}" class="access-denied">
+    <image class="lock-icon" src="/images/lock.png" mode="aspectFit"></image>
+    <text class="denied-title">训练营功能仅限正式会员</text>
+    <text class="denied-desc">成为正式会员，解锁训练计划</text>
+    <button class="contact-btn" bindtap="contactCoach">联系教练</button>
+  </view>
+
+  <!-- 主要内容 -->
+  <view wx:else class="main-content">
+    <!-- 头部区域 -->
+    <view class="header-section">
+      <image class="hero-image" src="{{heroUrl}}" mode="aspectFill"></image>
+      <view class="header-overlay">
+        <view class="title-row">
+          <text class="camp-title">{{campData.name}}</text>
+          <view class="countdown-bubble">{{formatCountdown(daysToTargetRace)}}</view>
+        </view>
+        <text class="camp-desc">{{campSubtitle}}</text>
+        <button class="course-btn" bindtap="navigateToCourse">赛道详情与参赛指导</button>
+      </view>
+    </view>
+
+    
+
+    
+
+    
+
+    <!-- 训练计划 -->
+    <view class="training-plan-section" style="height: 1902rpx; display: block; box-sizing: border-box">
+      <view class="section-header">
+        <text class="section-title">13周训练计划</text>
+        <view class="header-controls">
+          <view class="nav-arrows">
+            <button class="arrow-btn" bindtap="prevWeek">◀</button>
+            <text class="week-index">第{{currentWeek}}周</text>
+            <button class="arrow-btn" bindtap="nextWeek">▶</button>
+          </view>
+          <button class="leaderboard-btn" bindtap="viewLeaderboard">
+            <text>训练营排行榜</text>
+
+          </button>
+        </view>
+      </view>
+
+      <view class="top-row" style="height: 199rpx; display: flex; box-sizing: border-box">
+        <view class="progress-overview" style="position: relative; left: -39rpx; top: 0rpx; width: 439rpx; display: block; box-sizing: border-box; height: 195rpx">
+          <view class="progress-card" style="width: 414rpx; display: flex; box-sizing: border-box; position: relative; left: -39rpx; top: 0rpx">
+            <view class="progress-item">
+              <text class="progress-label">完成进度</text>
+              <text class="progress-value">{{userProgress.total_weeks_completed}}/{{userProgress.total_weeks}}</text>
+            </view>
+            <view class="progress-item">
+              <text class="progress-label">整体完成率</text>
+              <text class="progress-value">{{userProgress.overall_completion}}%</text>
+            </view>
+            <view class="progress-item">
+              <text class="progress-label">平均完成率</text>
+              <text class="progress-value">{{userProgress.avg_completion_rate}}%</text>
+            </view>
+          </view>
+        </view>
+        <view class="countdown-card" style="position: relative; left: -72rpx; top: 0rpx; width: 249rpx; display: block; box-sizing: border-box">
+          <text class="countdown-label">距离比赛</text>
+          <view class="flip-container">
+            <block wx:for="{{countdownDigits}}" wx:for-item="digit" wx:for-index="idx" wx:key="idx">
+              <view class="flip-digit">{{digit}}</view>
+            </block>
+            <text class="flip-suffix">天</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="weeks-container">
+
+        <view class="week-card {{currentWeek === userProgress.current_week ? 'current-week' : ''}} {{userProgress.week_completion[currentWeek] ? 'completed-week' : ''}}">
+          <view class="week-header" bindtap="toggleWeek" data-week="{{currentWeek}}">
+            <view class="week-info">
+              <text class="week-number">第{{currentWeek}}周</text>
+              <text class="week-phase" style="color: {{getPhaseColor(currentWeekData.phase)}}">{{currentWeekData.phase}}</text>
+            </view>
+            <view class="week-status">
+              <text class="planned-time">{{weeklyMinutes}}分钟 ≈ {{weeklyHours}}小时</text>
+              <text class="expand-icon">{{expandedWeeks[currentWeek] ? '▼' : '▶'}}</text>
+            </view>
+            
+          </view>
+
+          <view wx:if="{{expandedWeeks[currentWeek] && !isLocked}}" class="week-details">
+            <view class="week-focus">
+              <text class="focus-label">训练重点：</text>
+              <text class="focus-text">{{currentWeekData.theme}}</text>
+            </view>
+            
+              <view class="week-schedule">
+              <text class="schedule-title">每日安排：</text>
+              <view class="schedule-list">
+                <block wx:for="{{displaySchedule}}" wx:for-item="day" wx:key="day">
+                  <view class="day-item">
+                    <text class="day-icon">{{day.typeIcon}}</text>
+                    <view class="day-content">
+                      <text class="day-activity">{{day.dayName}} · {{day.typeLabel}}{{day.titleSafe}}（{{day.duration}}分钟）</text>
+                      <text class="day-guidance">{{day.guidanceSafe}}</text>
+                      <text class="day-guidance">{{getDailyGuidance(day, currentWeekData.phase)}}</text>
+                    </view>
+                  </view>
+                </block>
+              </view>
+            </view>
+
+            
+
+            <view class="week-actions">
+              <view wx:if="{{userProgress.week_completion[currentWeek]}}" class="completion-info">
+                <text class="completion-status">✅ 已完成</text>
+                <text class="completion-rate">完成率：{{userProgress.week_completion[currentWeek].completion_rate}}%</text>
+              </view>
+              <button 
+                wx:else 
+                class="upload-btn {{currentWeek === userProgress.current_week ? 'primary-btn' : 'secondary-btn'}}"
+                bindtap="uploadWeekSummary"
+                data-week="{{currentWeek}}">
+                {{currentWeek === userProgress.current_week ? '周打卡' : '补交周打卡'}}
+              </button>
+            </view>
+          </view>
+          <view wx:if="{{expandedWeeks[currentWeek] && isLocked}}" class="locked-card">
+            <text class="locked-title">已锁定</text>
+            <text class="locked-desc">完成上一周打卡并通过审核后解锁下一周训练计划。</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="intensity-card" style="position: relative; left: 0rpx; top: -54rpx">
+    <text class="intensity-title">强度分区简述</text>
+    <text class="intensity-text">Z1 恢复 · Z2 有氧基础 · Z3 节奏强化 · Z4 阈值训练 · Z5 短冲刺。按个人阈值计算更精准。</text>
+    <button class="intensity-btn" bindtap="navigateToTrainingAssistant">计算个人分区</button>
+  </view>
+
+  
+  <!-- 教练提示（底部，无跳转） -->
+  <view class="coach-note-section">
+    <view class="coach-note-card" style="position: relative; left: 0rpx; top: -52rpx; height: 183rpx; display: block; box-sizing: border-box">
+      <view class="coach-header" style="position: relative; left: -2rpx; top: -31rpx">
+        <text class="coach-icon">👨‍🏫</text>
+        <text class="coach-title">教练提示</text>
+      </view>
+      <text class="coach-content" style="position: relative; left: 2rpx; top: -50rpx">{{campData.coach_note}}</text>
+    </view>
+  </view>
+</view>

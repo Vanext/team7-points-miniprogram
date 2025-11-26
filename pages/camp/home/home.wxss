@@ -1,0 +1,662 @@
+/* pages/camp/home/home.wxss */
+
+.camp-home {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* 加载和错误状态 */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 40rpx;
+  min-height: 60vh;
+}
+
+.loading-text,
+.error-text {
+  font-size: 32rpx;
+  color: #666;
+  margin-bottom: 40rpx;
+}
+
+.upgrade-btn,
+.retry-btn {
+  background-color: #1a237e;
+  color: white;
+  border: none;
+  padding: 20rpx 40rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+
+/* 无权限状态 */
+.access-denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 40rpx;
+  text-align: center;
+}
+
+.lock-icon {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 40rpx;
+  opacity: 0.6;
+}
+
+.denied-title {
+  font-size: 36rpx;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.denied-desc {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 60rpx;
+  line-height: 1.5;
+}
+
+.contact-btn {
+  background-color: #1a237e;
+  color: white;
+  border: none;
+  padding: 24rpx 48rpx;
+  border-radius: 8rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+}
+
+/* 主要内容 */
+.main-content {
+  padding-bottom: 40rpx;
+}
+
+/* 头部区域 */
+.header-section {
+  position: relative;
+  height: 400rpx;
+  overflow: hidden;
+}
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.header-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  padding: 40rpx;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.event-logo {
+  height: 40rpx;
+}
+
+.camp-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 10rpx;
+}
+
+.camp-desc {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(255,255,255,0.9);
+}
+
+.course-btn {
+  margin-top: 16rpx;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border: 1rpx solid rgba(255,255,255,0.3);
+  padding: 12rpx 24rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+/* 状态区域 */
+.status-section {
+  display: flex;
+  padding: 40rpx;
+  gap: 20rpx;
+}
+
+.countdown-card,
+.current-status-card {
+  flex: 1;
+  background: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+}
+
+.countdown-label,
+.status-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.countdown-value {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #f44336;
+}
+
+.status-value {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #1a237e;
+}
+
+/* 进度概览 */
+.progress-overview {
+  padding: 0 40rpx 40rpx;
+}
+
+.progress-card {
+  background: white;
+  border-radius: 16rpx;
+  padding: 40rpx;
+  display: flex;
+  justify-content: space-around;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+}
+
+.progress-item {
+  text-align: center;
+}
+
+.progress-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.progress-value {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #1a237e;
+}
+
+/* 教练提示 */
+.coach-note-section {
+  padding: 0 40rpx 40rpx;
+}
+
+.coach-note-card {
+  background: linear-gradient(135deg, #1a237e, #3949ab);
+  border-radius: 16rpx;
+  padding: 40rpx;
+  color: white;
+}
+
+.coach-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.coach-icon {
+  font-size: 40rpx;
+  margin-right: 16rpx;
+}
+
+.coach-title {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.coach-content {
+  font-size: 28rpx;
+  line-height: 1.6;
+  margin-bottom: 30rpx;
+  opacity: 0.95;
+}
+
+.contact-coach-btn {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1rpx solid rgba(255,255,255,0.3);
+  padding: 16rpx 32rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+}
+
+/* 训练计划 */
+.training-plan-section {
+  padding: 0 40rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.nav-arrows {
+  display: flex;
+  gap: 8rpx;
+  }
+
+.week-index {
+  padding: 8rpx 16rpx;
+  font-size: 26rpx;
+  color: #333;
+}
+
+.arrow-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #333;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+}
+
+.section-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.leaderboard-btn {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  border: none;
+  padding: 16rpx 24rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.leaderboard-icon {
+  font-size: 24rpx;
+}
+
+.top-row {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 40rpx 20rpx;
+}
+.flip-container { display: flex; align-items: center; gap: 8rpx; }
+.flip-digit { width: 56rpx; height: 72rpx; background: #111; color: #fff; border-radius: 8rpx; box-shadow: 0 6rpx 12rpx rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 36rpx; font-weight: bold; }
+.flip-suffix { font-size: 26rpx; color: #333; margin-left: 4rpx; }
+
+.weeks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+/* 旧的周导航样式移除，使用箭头按钮 */
+
+.weeks-swiper {
+  height: 900rpx;
+}
+
+.week-swiper-item {
+  height: 100%;
+}
+
+.week-card {
+  background: white;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.week-card.current-week {
+  border: 2rpx solid #1a237e;
+  box-shadow: 0 8rpx 24rpx rgba(26,35,126,0.2);
+}
+
+.week-card.completed-week {
+  background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+}
+
+.week-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  background: rgba(0,0,0,0.02);
+}
+
+.week-info {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.week-number {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.week-phase {
+  font-size: 26rpx;
+  font-weight: 500;
+  padding: 8rpx 16rpx;
+  background: rgba(0,0,0,0.1);
+  border-radius: 20rpx;
+}
+
+.week-status {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+/* 已完成小时数进度条移除 */
+
+.planned-time {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.expand-icon {
+  font-size: 24rpx;
+  color: #999;
+  transition: transform 0.3s ease;
+}
+
+.week-details {
+  padding: 30rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.week-focus {
+  margin-bottom: 30rpx;
+}
+
+.focus-label {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.focus-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.5;
+}
+
+.week-schedule {
+  margin-bottom: 30rpx;
+}
+
+.schedule-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.day-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-radius: 8rpx;
+}
+
+.day-icon {
+  font-size: 32rpx;
+  width: 40rpx;
+  text-align: center;
+}
+
+.day-activity {
+  font-size: 28rpx;
+  color: #555;
+  flex: 1;
+}
+
+.day-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.day-guidance {
+  font-size: 24rpx;
+  color: #777;
+}
+
+.week-coach-note {
+  margin-bottom: 30rpx;
+  padding: 20rpx;
+  background: #fff3cd;
+  border-radius: 8rpx;
+  border-left: 4rpx solid #ffc107;
+}
+
+.coach-note-label {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #856404;
+  margin-bottom: 10rpx;
+}
+
+.coach-note-text {
+  font-size: 26rpx;
+  color: #856404;
+  line-height: 1.5;
+}
+
+.week-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.completion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.completion-status {
+  font-size: 28rpx;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.completion-rate {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.upload-btn {
+  padding: 20rpx 40rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  border: none;
+}
+
+.primary-btn {
+  background: #1a237e;
+  color: white;
+}
+
+.secondary-btn {
+  background: #f5f5f5;
+  color: #333;
+  border: 1rpx solid #ddd;
+}
+
+/* 模态框 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16rpx;
+  width: 80%;
+  max-width: 600rpx;
+  margin: 40rpx;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40rpx 40rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.modal-close {
+  font-size: 40rpx;
+  color: #999;
+  padding: 0 20rpx;
+}
+
+.modal-body {
+  padding: 40rpx;
+}
+
+.modal-text {
+  display: block;
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.modal-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 20rpx;
+  padding: 0 40rpx 40rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 24rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  border: none;
+}
+
+.modal-btn.secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1rpx solid #ddd;
+}
+
+.modal-btn.primary {
+  background: #1a237e;
+  color: white;
+}
+.countdown-bubble {
+  margin-left: auto;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border: 1rpx solid rgba(255,255,255,0.3);
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+.locked-card {
+  margin-top: 16rpx;
+  background: #fff7e6;
+  border: 1rpx solid #ffe58f;
+  border-radius: 12rpx;
+  padding: 24rpx;
+}
+.locked-title {
+  font-size: 28rpx;
+  color: #ad6800;
+  font-weight: bold;
+}
+.locked-desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #ad8b00;
+}
+.intensity-card {
+  margin: 24rpx 40rpx;
+  background: #eef3ff;
+  border: 1rpx solid #c5d0ff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+}
+.intensity-title { font-size: 30rpx; font-weight: bold; color: #1a237e; }
+.intensity-text { display: block; margin-top: 8rpx; font-size: 26rpx; color: #333; }
+.intensity-btn { margin-top: 12rpx; background: linear-gradient(135deg, #dc3545, #c82333); color: #fff; border-radius: 8rpx; padding: 16rpx 24rpx; font-size: 26rpx; }

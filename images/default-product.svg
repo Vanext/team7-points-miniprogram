@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="none">
+  <rect width="160" height="160" rx="16" fill="#F5F7FA"/>
+  <g stroke="#A0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="40" y="40" width="80" height="60" rx="8" fill="#fff"/>
+    <path d="M48 92l20-24 16 18 12-14 16 20H48z" fill="#E2E8F0"/>
+    <circle cx="64" cy="56" r="6" fill="#CBD5E0"/>
+  </g>
+  <text x="80" y="130" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12" fill="#A0AEC0">暂无图片</text>
+</svg>

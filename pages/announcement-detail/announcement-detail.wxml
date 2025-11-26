@@ -1,0 +1,7 @@
+<view class="container">
+  <view class="card">
+    <view class="title">{{detail.title}}</view>
+    <view class="meta" wx:if="{{detail.time}}">发布时间：{{detail.time}}</view>
+    <view class="content">{{detail.content}}</view>
+  </view>
+</view>

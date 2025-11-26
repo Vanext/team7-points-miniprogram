@@ -1,0 +1,27 @@
+<!--pages/point-detail/point-detail.wxml-->
+<view class="container">
+  <view wx:if="{{loading && records.length === 0}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text>加载中...</text>
+  </view>
+
+  <view wx:if="{{isEmpty}}" class="empty-container">
+    <!-- <image class="empty-icon" src="/images/empty-icon.png"></image> -->
+    <text class="empty-text">暂无积分记录</text>
+  </view>
+
+  <scroll-view wx:else scroll-y="true" class="record-list" bindscrolltolower="loadMore" lower-threshold="100">
+    <view wx:for="{{records}}" wx:key="_id" class="record-item">
+      <view class="record-info">
+        <text class="record-reason">{{item.reason}}</text>
+        <text class="record-time">{{item.formattedSubmitTime}}</text>
+      </view>
+      <view class="record-points {{item.points > 0 ? 'points-gain' : 'points-loss'}}">
+        {{item.points > 0 ? '+' : ''}}{{item.points}}
+      </view>
+    </view>
+    <view wx:if="{{loading}}" class="loading-more">
+      <text>加载中...</text>
+    </view>
+  </scroll-view>
+</view>

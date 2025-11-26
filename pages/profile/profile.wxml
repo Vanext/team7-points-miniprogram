@@ -1,4 +1,78 @@
 <view class="container">
-  <text>profile页面</text>
-  <text>功能开发中...</text>
+  <!-- User Header -->
+  <view class="user-header">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+      <view class="info-right">
+        <text class="nickname">{{userInfo.nickName || '未登录'}}</text>
+        <text class="user-id" wx:if="{{userInfo.id}}">ID: {{userInfo.id}}</text>
+        <button class="login-btn" wx:if="{{!userInfo.nickName}}" bindtap="login">点击登录</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- Stats Grid -->
+  <view class="stats-grid">
+    <view class="stat-item">
+      <text class="stat-num">{{stats.points || 0}}</text>
+      <text class="stat-label">总积分</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-num" wx:if="{{userInfo.isOfficialMember}}">正式会员</text>
+      <text class="stat-num" wx:else> </text>
+      <text class="stat-label">会员状态</text>
+    </view>
+          <view class="stat-item">
+            <text class="stat-num">{{joinDaysDisplay || (stats.days + '天')}}</text>
+            <text class="stat-label">加入天数</text>
+          </view>
+  </view>
+
+  <!-- Menu List -->
+  <view class="menu-list">
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/edit-profile/edit-profile">
+      <text class="menu-text">👤 个人资料</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/point-detail/point-detail">
+      <text class="menu-text">📊 积分明细</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/exchange-history/exchange-history">
+      <text class="menu-text">🎁 兑换记录</text>
+      <text class="arrow">></text>
+    </view>
+  </view>
+
+  <!-- Admin Entry (Conditional) -->
+    <view class="menu-list" wx:if="{{userInfo.isAdmin}}">
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/audit/audit">
+      <text class="menu-text">🔍 积分审核</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/camp-applications/camp-applications">
+      <text class="menu-text">🏃 资格审核</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/announcements/announcements">
+      <text class="menu-text">📝 公告管理</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/members/members">
+      <text class="menu-text">👥 成员管理</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/exchange/exchange">
+      <text class="menu-text">📦 兑换处理</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/products/products">
+      <text class="menu-text">🛒 商品管理</text>
+      <text class="arrow">></text>
+    </view>
+    </view>
+
+  <view class="footer">
+    <text class="version">Team 7 Points v1.0.0</text>
+  </view>
 </view>

@@ -1,0 +1,15 @@
+{
+  "name": "backfillTrainingStats",
+  "version": "1.0.0",
+  "description": "回填用户历史训练时长统计",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"no tests\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}
+

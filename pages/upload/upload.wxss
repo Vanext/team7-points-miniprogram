@@ -1,4 +1,257 @@
+/* pages/upload/upload.wxss */
 .container {
-  padding: 40rpx;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 20rpx;
+  background-color: #fff;
+}
+
+.rules-btn {
+  display: flex;
+  align-items: center;
+  font-size: 24rpx;
+  color: #1a237e;
+}
+
+.rules-btn .icon {
+  margin-right: 8rpx;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background-color: #fff;
+  padding: 0 20rpx;
+  border-bottom: 1rpx solid #e0e0e0;
+}
+
+.tab-item {
+  flex: 1;
   text-align: center;
+  padding: 20rpx 0;
+  font-size: 28rpx;
+  color: #757575;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #1a237e;
+  font-weight: 600;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  width: 60%;
+  height: 4rpx;
+  background-color: #1a237e;
+}
+
+/* Content Area */
+.content-area {
+  padding: 20rpx;
+}
+
+.form-section {
+  background-color: #fff;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
+}
+
+.form-group {
+  margin-bottom: 40rpx;
+}
+
+.form-group label {
+  display: block;
+  font-size: 28rpx;
+  color: #212121;
+  margin-bottom: 20rpx;
+  font-weight: 500;
+}
+
+.picker-view {
+  background-color: #f5f5f5;
+  padding: 20rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.switch-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.switch-group label {
+  margin-bottom: 0;
+}
+
+textarea {
+  width: 100%;
+  height: 200rpx;
+  background-color: #f5f5f5;
+  padding: 20rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+/* Image Uploader */
+.image-uploader {
+  width: 160rpx;
+  height: 160rpx;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.upload-placeholder {
+  font-size: 60rpx;
+  color: #bdbdbd;
+}
+
+.image-uploader image {
+  width: 100%;
+  height: 100%;
+}
+
+/* Hour Grid */
+.hours-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.hour-item {
+  width: calc((100% - 80rpx) / 5); /* 5 items per row, 4 gaps of 20rpx */
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  color: #333;
+  background-color: #fff;
+}
+
+.hour-item.selected {
+  background-color: #1a237e;
+  color: #fff;
+  border-color: #1a237e;
+}
+
+/* Submit Button */
+.submit-btn {
+  margin-top: 60rpx;
+  background-color: #1a237e;
+  color: #fff;
+  font-size: 32rpx;
+  padding: 20rpx 0;
+  border-radius: 40rpx;
+}
+
+.submit-btn:active {
+  opacity: 0.9;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  position: relative;
+  width: 85%;
+  max-height: 80vh;
+  background-color: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1a237e;
+}
+
+.close-icon {
+  font-size: 40rpx;
+  color: #999;
+  line-height: 1;
+  padding: 10rpx;
+}
+
+.modal-body {
+  padding: 30rpx;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.rule-section {
+  margin-bottom: 30rpx;
+}
+
+.rule-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.rule-item {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 8rpx;
+}
+
+.modal-footer {
+  padding: 20rpx;
+  border-top: 1rpx solid #e0e0e0;
+}
+
+.confirm-btn {
+  background-color: #00c853; /* Green confirm button */
+  color: #fff;
+  font-size: 30rpx;
 }

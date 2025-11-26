@@ -1,0 +1,35 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bottleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4FC3F7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#29B6F6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="capGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#37474F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#263238;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="300" height="300" fill="#F5F5F5"/>
+  
+  <!-- Bottle body -->
+  <rect x="110" y="80" width="80" height="180" rx="8" ry="8" fill="url(#bottleGradient)" stroke="#0277BD" stroke-width="2"/>
+  
+  <!-- Bottle cap -->
+  <rect x="105" y="60" width="90" height="30" rx="15" ry="15" fill="url(#capGradient)"/>
+  
+  <!-- Cap details -->
+  <circle cx="150" cy="75" r="3" fill="#546E7A"/>
+  
+  <!-- Water level -->
+  <rect x="115" y="120" width="70" height="100" rx="5" ry="5" fill="#81D4FA" opacity="0.7"/>
+  
+  <!-- Bottle label -->
+  <rect x="120" y="140" width="60" height="40" rx="3" ry="3" fill="white" opacity="0.9"/>
+  <text x="150" y="155" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1A237E" font-weight="bold">Team7</text>
+  <text x="150" y="170" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#1A237E">运动水杯</text>
+  
+  <!-- Highlight -->
+  <rect x="125" y="85" width="8" height="60" rx="4" ry="4" fill="white" opacity="0.3"/>
+</svg>

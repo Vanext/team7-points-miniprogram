@@ -1,0 +1,23 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆形 -->
+  <circle cx="60" cy="60" r="55" fill="#f5f5f5" stroke="#e0e0e0" stroke-width="2"/>
+  
+  <!-- 奖牌绳带 -->
+  <rect x="55" y="25" width="10" height="20" fill="#1a237e"/>
+  <rect x="52" y="25" width="4" height="15" fill="#3949ab"/>
+  <rect x="64" y="25" width="4" height="15" fill="#3949ab"/>
+  
+  <!-- 奖牌主体 -->
+  <circle cx="60" cy="65" r="22" fill="#1a237e"/>
+  <circle cx="60" cy="65" r="18" fill="#3949ab"/>
+  <circle cx="60" cy="65" r="14" fill="#ffffff"/>
+  
+  <!-- 奖牌中心图案 -->
+  <circle cx="60" cy="65" r="10" fill="#1a237e"/>
+  
+  <!-- 星形装饰 -->
+  <path d="M60 58 L62 63 L67 63 L63 66 L65 71 L60 68 L55 71 L57 66 L53 63 L58 63 Z" fill="#ffffff"/>
+  
+  <!-- Team7 标识 -->
+  <text x="60" y="95" text-anchor="middle" fill="#1a237e" font-family="Arial, sans-serif" font-size="8" font-weight="bold">TEAM7</text>
+</svg>

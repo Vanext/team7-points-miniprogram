@@ -1,0 +1,9 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "运动员档案",
+  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f8fafc",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50
+}

@@ -1,0 +1,177 @@
+<!--pages/camp/leaderboard/leaderboard.wxml-->
+<view class="camp-leaderboard">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <text class="loading-text">加载排行榜中...</text>
+  </view>
+
+  <!-- 错误状态 -->
+  <view wx:elif="{{error}}" class="error-container">
+    <text class="error-text">{{error}}</text>
+    <button class="retry-btn" bindtap="loadLeaderboard">重新加载</button>
+  </view>
+
+  <!-- 无权限状态 -->
+  <view wx:elif="{{!hasAccess}}" class="access-denied">
+    <image class="lock-icon" src="/images/lock.png" mode="aspectFit"></image>
+    <text class="denied-title">训练营功能仅限正式会员</text>
+    <text class="denied-desc">请联系教练升级为正式会员</text>
+  </view>
+
+  <!-- 排行榜内容 -->
+  <view wx:else class="main-content">
+    <!-- Tab切换 -->
+    <view class="tab-container">
+      <view class="tab-item {{activeTab === 'camp' ? 'active' : ''}}" data-tab="camp" bindtap="switchTab">
+        <text class="tab-text">训练营排行</text>
+      </view>
+      <view class="tab-item {{activeTab === 'training' ? 'active' : ''}}" data-tab="training" bindtap="switchTab">
+        <text class="tab-text">训练时长排行</text>
+      </view>
+    </view>
+
+    <!-- 训练营排行榜 -->
+    <view wx:if="{{activeTab === 'camp'}}">
+      <!-- 训练营信息 -->
+      <view class="camp-info-section">
+        <view class="camp-info-card">
+          <text class="camp-name">{{campInfo.name}}</text>
+          <text class="camp-participants">{{campInfo.total_weeks}}周训练 · {{leaderboard.length}}人参与</text>
+        </view>
+      </view>
+
+      <!-- 当前用户排名 -->
+      <view wx:if="{{currentUserRank}}" class="current-user-section">
+        <view class="current-user-card">
+          <view class="user-rank-info">
+            <text class="rank-badge {{getRankStyle(currentUserRank.rank)}}">{{formatRank(currentUserRank.rank)}}</text>
+            <view class="user-info">
+              <text class="user-name">我的排名</text>
+              <text class="user-stats">第{{currentUserRank.rank}}名 · 完成{{currentUserRank.weeksCompleted}}周</text>
+            </view>
+          </view>
+          <view class="completion-rate">
+            <text class="rate-value">{{formatCompletionRate(currentUserRank.avgCompletionRate)}}</text>
+            <text class="rate-label">平均完成率</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 排行榜列表 -->
+      <view class="leaderboard-section">
+        <view class="section-header">
+          <text class="section-title">训练排行榜</text>
+          <text class="section-subtitle">按完成周数和平均完成率排序</text>
+        </view>
+
+        <view class="leaderboard-list">
+          <block wx:for="{{leaderboard}}" wx:key="userId">
+            <view class="rank-item {{item.userId === currentUserRank.userId ? 'current-user' : ''}}">
+              <view class="rank-left">
+                <text class="rank-number {{getRankStyle(item.rank)}}" style="color: {{getRankColor(item.rank)}}">
+                  {{formatRank(item.rank)}}
+                </text>
+                <image class="user-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+                <view class="user-details">
+                  <text class="user-name">{{item.nickname}}</text>
+                  <text class="user-weeks">{{getBadgeIcon(item.weeksCompleted, campInfo.total_weeks)}} 完成{{item.weeksCompleted}}周</text>
+                </view>
+              </view>
+              <view class="rank-right">
+                <text class="completion-rate-value">{{formatCompletionRate(item.avgCompletionRate)}}</text>
+                <text class="completion-rate-label">平均完成率</text>
+              </view>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <!-- 排行榜说明 -->
+      <view class="leaderboard-info">
+        <view class="info-card">
+          <text class="info-title">排行榜规则</text>
+          <view class="info-item">
+            <text class="info-icon">📊</text>
+            <text class="info-text">按完成周数排序，周数相同按平均完成率排序</text>
+          </view>
+          <view class="info-item">
+            <text class="info-icon">✅</text>
+            <text class="info-text">每周上传训练总结，审核通过后计入排行榜</text>
+          </view>
+          <view class="info-item">
+            <text class="info-icon">⏰</text>
+            <text class="info-text">建议在每周日前完成当周训练总结上传</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 训练时长排行榜 -->
+    <view wx:if="{{activeTab === 'training'}}">
+      <!-- 当前用户训练时长排名 -->
+      <view wx:if="{{currentTrainingUserRank}}" class="current-user-section">
+        <view class="current-user-card">
+          <view class="user-rank-info">
+            <text class="rank-badge {{getRankStyle(currentTrainingUserRank.rank)}}">{{formatRank(currentTrainingUserRank.rank)}}</text>
+            <view class="user-info">
+              <text class="user-name">我的排名</text>
+              <text class="user-stats">第{{currentTrainingUserRank.rank}}名 · {{currentTrainingUserRank.totalTrainingHours}}小时</text>
+            </view>
+          </view>
+          <view class="completion-rate">
+            <text class="rate-value">{{currentTrainingUserRank.totalTrainingHours}}</text>
+            <text class="rate-label">训练时长(h)</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 训练时长排行榜列表 -->
+      <view class="leaderboard-section">
+        <view class="section-header">
+          <text class="section-title">训练时长排行榜</text>
+          <text class="section-subtitle">累计训练时长排行</text>
+        </view>
+
+        <view class="leaderboard-list">
+          <block wx:for="{{trainingLeaderboard}}" wx:key="userId">
+            <view class="rank-item {{item.userId === currentTrainingUserRank.userId ? 'current-user' : ''}}">
+              <view class="rank-left">
+                <text class="rank-number {{getRankStyle(item.rank)}}" style="color: {{getRankColor(item.rank)}}">
+                  {{formatRank(item.rank)}}
+                </text>
+                <image class="user-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+                <view class="user-details">
+                  <text class="user-name">{{item.nickname}}</text>
+                  <text class="user-weeks">{{getTrainingBadgeIcon(item.totalTrainingHours)}} {{item.totalTrainingHours}}小时</text>
+                </view>
+              </view>
+              <view class="rank-right">
+                <text class="completion-rate-value">{{item.trainingCount}}</text>
+                <text class="completion-rate-label">训练次数</text>
+              </view>
+            </view>
+          </block>
+        </view>
+      </view>
+
+      <!-- 训练时长排行榜说明 -->
+      <view class="leaderboard-info">
+        <view class="info-card">
+          <text class="info-title">排行榜规则</text>
+          <view class="info-item">
+            <text class="info-icon">⏱️</text>
+            <text class="info-text">按累计训练时长排序</text>
+          </view>
+          <view class="info-item">
+            <text class="info-icon">📈</text>
+            <text class="info-text">每次训练完成后自动计入排行榜</text>
+          </view>
+          <view class="info-item">
+            <text class="info-icon">🏆</text>
+            <text class="info-text">训练时长越多，排名越靠前</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,46 @@
+<view class="container">
+  <view class="card">
+    <view class="section">
+      <text class="label">用户</text>
+      <view class="user-row">
+        <image class="avatar" src="{{record.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+        <text class="name">{{record.userInfo.nickName || '用户'}}</text>
+      </view>
+    </view>
+
+    <view class="section">
+      <text class="label">类型</text>
+      <text class="value">{{record.category || record.categoryName}}</text>
+    </view>
+
+    <view class="section">
+      <text class="label">提交时间</text>
+      <text class="value">{{record.submitTimeFormatted}}</text>
+    </view>
+
+    <view class="section">
+      <text class="label">详情描述</text>
+      <text class="value">{{record.description || '无描述'}}</text>
+    </view>
+
+    <view class="section">
+      <text class="label">图片凭证</text>
+      <view class="images">
+        <block wx:for="{{record.images}}" wx:key="*this">
+          <image class="image" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}"></image>
+        </block>
+      </view>
+    </view>
+
+    <view class="section" wx:if="{{record.status==='rejected'}}">
+      <text class="label">拒绝理由</text>
+      <text class="reason">{{record.rejectReason || '未填写理由'}}</text>
+    </view>
+  </view>
+
+  <view class="actions">
+    <button class="btn" bindtap="approveRecord">通过</button>
+    <button class="btn danger" bindtap="rejectRecord">拒绝</button>
+    <button class="btn" bindtap="goBack">返回</button>
+  </view>
+</view>

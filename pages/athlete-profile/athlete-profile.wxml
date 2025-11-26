@@ -1,0 +1,125 @@
+<!--pages/athlete-profile/athlete-profile.wxml-->
+<view class="container">
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-skeleton">
+      <view class="skeleton-header">
+        <view class="skeleton-avatar"></view>
+        <view class="skeleton-info">
+          <view class="skeleton-line"></view>
+          <view class="skeleton-line short"></view>
+        </view>
+      </view>
+      <view class="skeleton-stats">
+        <view class="skeleton-stat" wx:for="{{[1,2,3]}}" wx:key="*this">
+          <view class="skeleton-line"></view>
+          <view class="skeleton-line short"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 错误状态 -->
+  <view class="error-container" wx:if="{{error && !loading}}">
+    <view class="error-icon">⚠️</view>
+    <text class="error-text">{{error}}</text>
+    <button class="retry-btn" bindtap="retryLoad">重试</button>
+  </view>
+
+  <!-- 用户档案内容 -->
+  <view wx:if="{{!loading && !error && userInfo}}">
+    <!-- 用户信息头部 -->
+    <view class="profile-header">
+      <view class="header-bg">
+        <image class="user-avatar" src="{{userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+        <view class="user-info">
+          <text class="user-name">{{userInfo.nickName}}</text>
+          <text class="user-id">ID: {{userInfo.openid || userId}}</text>
+        </view>
+        <button class="follow-btn {{isFollowing ? 'following' : ''}}" bindtap="toggleFollow">
+          <text class="follow-text">{{isFollowing ? '已关注' : '关注'}}</text>
+        </button>
+      </view>
+    </view>
+
+    <!-- 统计数据 -->
+    <view class="stats-section">
+      <view class="stats-grid">
+        <view class="stat-item">
+          <text class="stat-number">{{totalParticipations}}</text>
+          <text class="stat-label">参赛次数</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">{{totalPoints}}</text>
+          <text class="stat-label">总积分</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">{{userInfo.pointsCount || 0}}</text>
+          <text class="stat-label">获得积分次数</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 参赛历史 -->
+    <view class="history-section">
+      <view class="section-header">
+        <text class="section-title">Ta的铁三动态</text>
+      </view>
+
+      <!-- 年度分组显示 -->
+      <view class="yearly-history" wx:if="{{participationHistory.length > 0}}">
+        <block wx:for="{{participationHistory}}" wx:key="id" wx:for-item="record">
+          <!-- 年份分隔符 -->
+          <view class="year-divider" wx:if="{{index === 0 || record.year !== participationHistory[index-1].year}}">
+            <text class="year-text">{{record.year || currentYear}}</text>
+          </view>
+
+          <!-- 比赛记录 -->
+          <view class="event-card">
+            <view class="event-header">
+              <view class="event-info">
+                <text class="event-name">{{record.eventName || '铁人三项比赛'}}</text>
+                <view class="event-meta">
+                  <text class="event-date">{{record.date || '日期未知'}}</text>
+                  <view class="event-type {{getEventTypeClass(record.eventType)}}">
+                    <text class="type-text">{{record.eventType || '铁人三项'}}</text>
+                  </view>
+                </view>
+              </view>
+              <view class="event-result">
+                <text class="result-time">{{record.completionTime || '--:--:--'}}</text>
+              </view>
+            </view>
+
+            <!-- 详细成绩 -->
+            <view class="event-details" wx:if="{{record.segments}}">
+              <view class="segment" wx:for="{{record.segments}}" wx:key="type" wx:for-item="segment">
+                <view class="segment-icon">
+                  <text class="icon" wx:if="{{segment.type === 'swim'}}">🏊</text>
+                  <text class="icon" wx:if="{{segment.type === 'bike'}}">🚴</text>
+                  <text class="icon" wx:if="{{segment.type === 'run'}}">🏃</text>
+                </view>
+                <view class="segment-info">
+                  <text class="segment-name">{{segment.name}}</text>
+                  <text class="segment-time">{{segment.time}}</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 积分信息 -->
+            <view class="points-info" wx:if="{{record.points}}">
+              <text class="points-earned">+{{record.points}}积分</text>
+            </view>
+          </view>
+        </block>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-history" wx:if="{{participationHistory.length === 0}}">
+        <view class="empty-icon">🏃‍♂️</view>
+        <text class="empty-text">暂无参赛记录</text>
+        <text class="empty-desc">该用户还没有参加过比赛</text>
+      </view>
+    </view>
+  </view>
+</view>

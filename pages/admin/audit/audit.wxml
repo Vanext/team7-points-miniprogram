@@ -1,0 +1,144 @@
+<!--pages/admin/audit/audit.wxml-->
+<view class="container">
+  <!-- 权限检查 -->
+  <block wx:if="{{!isAdmin}}">
+    <view class="no-access">
+      <text>正在检查权限...</text>
+    </view>
+  </block>
+  
+  <block wx:else>
+    <!-- 标签页 - 优化样式 -->
+    <view class="tabs-container">
+      <view class="tabs">
+        <view 
+          wx:for="{{tabs}}" 
+          wx:key="id" 
+          class="tab {{currentTab === item.id ? 'active' : ''}}" 
+          bindtap="onTabChange"
+          data-id="{{item.id}}"
+        >
+          <text class="tab-text">{{item.name}}</text>
+          <view class="tab-indicator" wx:if="{{currentTab === item.id}}"></view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 记录列表 - 优化布局 -->
+    <view class="records-list">
+      <block wx:if="{{records.length > 0}}">
+        <view 
+          wx:for="{{records}}" 
+          wx:key="_id" 
+          class="record-card {{item.autoApproved ? 'auto-approved' : ''}}"
+          data-id="{{item._id}}"
+        >
+          <!-- 记录头部 - 优化布局 -->
+          <view class="record-header">
+            <view class="user-info">
+              <image class="user-avatar" src="{{item.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+              <view class="record-info">
+                <text class="user-name">{{item.userInfo.nickName || '用户'}}</text>
+                <text class="submit-time">{{item.submitTimeFormatted}}</text>
+              </view>
+            </view>
+            <view class="points-container">
+              <text class="points">+{{item.points}}</text>
+              <text class="auto-tag" wx:if="{{item.autoApproved}}">自动</text>
+            </view>
+          </view>
+          
+          <!-- 记录内容 - 优化布局（待审/已通过直接在列表操作；已拒绝可点进详情看理由） -->
+          <view class="record-body" wx:if="{{currentTab !== 'rejected'}}">
+            <view class="record-content">
+              <view class="category-row">
+                <text class="category">{{item.category}}</text>
+              </view>
+              <text class="description">{{item.description}}</text>
+            </view>
+            
+            <!-- 图片预览 - 优化布局 -->
+            <view class="image-preview" wx:if="{{item.thumb}}" bindtap="previewImages" data-images="{{item.images}}">
+              <image 
+                src="{{item.thumb}}" 
+                mode="aspectFill"
+                class="preview-image"
+                lazy-load="true"></image>
+              <view class="image-count-badge" wx:if="{{item.images.length > 1}}">
+                <text>+{{item.images.length - 1}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="record-body" wx:if="{{currentTab === 'rejected'}}" bindtap="viewDetail" data-id="{{item._id}}">
+            <view class="record-content">
+              <view class="category-row">
+                <text class="category">{{item.category}}</text>
+              </view>
+              <text class="description">{{item.description}}</text>
+              <view class="reject-hint" wx:if="{{item.rejectReason}}">
+                <text class="hint-label">理由</text>
+                <text class="hint-text">{{item.rejectReason}}</text>
+              </view>
+            </view>
+            <view class="image-preview" wx:if="{{item.thumb}}">
+              <image 
+                src="{{item.thumb}}" 
+                mode="aspectFill"
+                class="preview-image"
+                lazy-load="true"></image>
+              <view class="image-count-badge" wx:if="{{item.images.length > 1}}">
+                <text>+{{item.images.length - 1}}</text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 操作按钮 - 优化布局和逻辑 -->
+          <view class="record-actions">
+            <block wx:if="{{currentTab === 'pending'}}">
+              <button 
+                class="action-btn approve" 
+                bindtap="approveRecord"
+                data-id="{{item._id}}">通过</button>
+              <button 
+                class="action-btn reject" 
+                bindtap="rejectRecord"
+                data-id="{{item._id}}">拒绝</button>
+            </block>
+            <block wx:if="{{currentTab === 'approved'}}">
+              <button 
+                class="action-btn cancel" 
+                bindtap="cancelApproval"
+                data-id="{{item._id}}">取消通过</button>
+            </block>
+            <block wx:if="{{currentTab === 'rejected'}}">
+              <button 
+                class="action-btn approve" 
+                bindtap="approveRejected"
+                data-id="{{item._id}}">重新通过</button>
+            </block>
+          </view>
+        </view>
+      </block>
+      
+      <view class="empty-state" wx:elif="{{!loading}}">
+        <text>暂无{{currentTab === 'pending' ? '待审核' : currentTab === 'approved' ? '已通过' : '已拒绝'}}的积分记录</text>
+      </view>
+      
+      <!-- 加载状态 -->
+      <view class="loading-state" wx:if="{{loading}}">
+        <text>加载中...</text>
+      </view>
+      
+      <!-- 优化分页显示 -->
+      <view class="pagination" wx:if="{{!loading && records.length > 0}}">
+        <view class="page-button {{!hasMore ? 'disabled' : ''}}" bindtap="loadRecords" wx:if="{{hasMore}}">
+          <text>加载更多</text>
+        </view>
+        <view class="page-info" wx:if="{{!hasMore}}">
+          <text>已加载全部</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

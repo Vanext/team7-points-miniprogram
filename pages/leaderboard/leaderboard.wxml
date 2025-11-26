@@ -1,4 +1,68 @@
 <view class="container">
-  <text>leaderboard页面</text>
-  <text>功能开发中...</text>
+  <!-- Header Banner -->
+  <view class="lb-header">
+    <text class="lb-title">排行榜</text>
+    <text class="lb-subtitle">TRAINING & POINTS</text>
+  </view>
+  <!-- Tabs -->
+  <view class="tabs">
+    <view class="tab-item {{currentTab === 'month' ? 'active' : ''}}" bindtap="switchTab" data-tab="month">月训练排行榜</view>
+    <view class="tab-item {{currentTab === 'season' ? 'active' : ''}}" bindtap="switchTab" data-tab="season">积分排行榜</view>
+  </view>
+
+  <!-- Top 3 Area -->
+  <view class="top3-container" wx:if="{{top3.length > 0}}">
+    <!-- Rank 2 -->
+    <view class="top3-item rank-2" wx:if="{{top3[1]}}">
+      <view class="avatar-container">
+        <image class="avatar" src="{{top3[1].avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+        <view class="rank-badge">2</view>
+      </view>
+      <text class="name">{{top3[1].nickName}}</text>
+      <text class="points">{{top3[1].points}}</text>
+    </view>
+
+    <!-- Rank 1 -->
+    <view class="top3-item rank-1" wx:if="{{top3[0]}}">
+      <view class="crown">👑</view>
+      <view class="avatar-container">
+        <image class="avatar" src="{{top3[0].avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+        <view class="rank-badge">1</view>
+      </view>
+      <text class="name">{{top3[0].nickName}}</text>
+      <text class="points">{{top3[0].points}}</text>
+    </view>
+
+    <!-- Rank 3 -->
+    <view class="top3-item rank-3" wx:if="{{top3[2]}}">
+      <view class="avatar-container">
+        <image class="avatar" src="{{top3[2].avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+        <view class="rank-badge">3</view>
+      </view>
+      <text class="name">{{top3[2].nickName}}</text>
+      <text class="points">{{top3[2].points}}</text>
+    </view>
+  </view>
+
+  <!-- Rank List (4+) -->
+  <scroll-view scroll-y class="rank-list" wx:if="{{rankList.length > 0}}">
+    <view class="rank-item" wx:for="{{rankList}}" wx:key="id">
+      <view class="rank-num">{{item.rank}}</view>
+      <image class="user-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+      <view class="user-info">
+        <text class="user-name">{{item.nickName}}</text>
+      </view>
+      <view class="user-points">{{item.points}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- My Rank (Fixed Bottom) -->
+  <view class="my-rank" wx:if="{{myRank}}">
+    <view class="rank-num">{{myRank.rank}}</view>
+    <image class="user-avatar" src="{{myRank.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+    <view class="user-info">
+      <text class="user-name">我</text>
+    </view>
+    <view class="user-points">{{myRank.points}}</view>
+  </view>
 </view>

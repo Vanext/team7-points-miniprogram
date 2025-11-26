@@ -1,4 +1,225 @@
+/* pages/leaderboard/leaderboard.wxss */
 .container {
-  padding: 40rpx;
+  padding-bottom: 96rpx; /* Space for fixed bottom bar */
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+/* Header Banner */
+.lb-header {
+  background: linear-gradient(180deg, #1a237e, #2c3aa8);
+  color: #fff;
+  border-radius: 24rpx;
+  margin: 16rpx;
+  padding: 20rpx 16rpx;
   text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(26,35,126,0.25);
+}
+.lb-title { font-size: 36rpx; font-weight: 700; letter-spacing: 2rpx; }
+.lb-subtitle { font-size: 22rpx; opacity: 0.9; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: #fff;
+  padding: 8rpx;
+  margin: 0 16rpx 12rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.05);
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  font-size: 26rpx;
+  color: #666;
+  padding: 14rpx 0;
+  border-radius: 16rpx;
+}
+
+.tab-item.active { background: #1a237e; color: #fff; font-weight: 700; }
+
+/* Top 3 Area */
+.top3-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 20rpx 16rpx 20rpx;
+  background: linear-gradient(180deg, #eef2ff, #ffffff);
+  border-radius: 20rpx;
+  margin: 0 16rpx 12rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.05);
+}
+
+.top3-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  width: 30%;
+}
+
+.avatar-container {
+  position: relative;
+  margin-bottom: 16rpx;
+}
+
+.avatar {
+  border-radius: 50%;
+  border: 4rpx solid #fff;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1);
+}
+
+.rank-1 .avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-color: #ffd700;
+}
+
+.rank-2 .avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-color: #c0c0c0;
+}
+
+.rank-3 .avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-color: #cd7f32;
+}
+
+.rank-badge {
+  position: absolute;
+  bottom: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  background: #333;
+  color: #fff;
+  font-size: 20rpx;
+  border-radius: 50%;
+  border: 2rpx solid #fff;
+}
+
+.rank-1 .rank-badge { background: #ffd700; color: #fff; }
+.rank-2 .rank-badge { background: #c0c0c0; color: #fff; }
+.rank-3 .rank-badge { background: #cd7f32; color: #fff; }
+
+.crown {
+  font-size: 40rpx;
+  margin-bottom: -10rpx;
+  z-index: 1;
+  animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10rpx); }
+  100% { transform: translateY(0); }
+}
+
+.name {
+  font-size: 24rpx;
+  color: #333;
+  margin-bottom: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.rank-1 .name { font-weight: bold; font-size: 26rpx; }
+
+.points {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #fff;
+  background: var(--primary-color, #1a237e);
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  min-width: 96rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(26,35,126,0.2);
+}
+
+/* Rank List (4+) */
+.rank-list {
+  background: #fff;
+  padding: 0 16rpx;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.rank-item:last-child {
+  border-bottom: none;
+}
+
+.rank-num {
+  width: 44rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #999;
+  font-style: italic;
+  font-weight: bold;
+}
+
+.user-avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  margin: 0 12rpx;
+  background-color: #eee;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 24rpx;
+  color: #333;
+}
+
+.user-points {
+  font-size: 24rpx;
+  font-weight: bold;
+  color: #fff;
+  background: var(--primary-color, #1a237e);
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  min-width: 96rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(26,35,126,0.2);
+  margin-right: 12rpx;
+}
+
+/* Fixed Bottom Bar (My Rank) */
+.my-rank {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 96rpx;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 24rpx;
+  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.05);
+  z-index: 99;
+}
+
+.my-rank .rank-num {
+  color: var(--primary-color, #1a237e);
+}
+
+.my-rank .user-name {
+  font-weight: bold;
 }
