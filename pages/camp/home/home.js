@@ -1,4 +1,5 @@
 // pages/camp/home/home.js
+const app = getApp()
 Page({
   data: {
     // 训练营数据
@@ -29,39 +30,41 @@ Page({
   },
 
   onLoad: function (options) {
-    this.checkUserAccess()
+    const approvedHint = options && (options.approved === '1' || options.approved === 1)
+    if (approvedHint) {
+      this.setData({ hasAccess: true, error: null })
+      this.loadCampData()
+    } else {
+      this.checkUserAccess()
+    }
   },
 
   onShow: function () {
     if (this.data.hasAccess) {
       this.loadCampData()
     }
+    wx.showShareMenu({ withShareTicket: true })
   },
 
   // 检查用户访问权限
   async checkUserAccess() {
     try {
-      const userInfo = wx.getStorageSync('userInfo')
-      if (!userInfo) {
-        this.setData({
-          loading: false,
-          error: '请先登录',
-          hasAccess: false
-        })
-        return
-      }
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      let approved = false
+      try {
+        const r = await wx.cloud.callFunction({ name: 'campApplication', config: { env: cloudEnv }, data: { action: 'getMyStatus' } })
+        approved = !!(r.result && r.result.status === 'approved')
+      } catch (_) { approved = false }
+
+      const userInfo = wx.getStorageSync('userInfo') || app.globalData.userInfo || null
+      const hasAccess = !!approved
 
       this.setData({
-        userRole: userInfo.isOfficialMember ? 'official' : 'user',
-        hasAccess: userInfo.isOfficialMember === true
+        userRole: 'user',
+        hasAccess,
+        loading: false,
+        error: hasAccess ? null : '仅训练营申请通过后可访问'
       })
-
-      if (userInfo.isOfficialMember !== true) {
-        this.setData({
-          loading: false,
-          error: '仅正式会员可访问训练营功能'
-        })
-      }
     } catch (error) {
       console.error('检查权限失败', error)
       this.setData({
@@ -72,16 +75,42 @@ Page({
     }
   },
 
+  async reloadOrLogin() {
+    try {
+      const u = wx.getStorageSync('userInfo')
+      if (!u) {
+        await app.login()
+      }
+      const userInfo = wx.getStorageSync('userInfo') || app.globalData.userInfo || null
+      if (!userInfo) {
+        this.setData({ error: '请先登录', hasAccess: false })
+        return
+      }
+      this.setData({
+        userRole: userInfo.isOfficialMember ? 'official' : 'user',
+        hasAccess: userInfo.isOfficialMember === true,
+        error: null
+      })
+      if (this.data.hasAccess) {
+        await this.loadCampData()
+      } else {
+        this.setData({ error: '仅正式会员可访问训练营功能' })
+      }
+    } catch (_) {
+      this.setData({ error: '登录失败，请重试' })
+    }
+  },
+
   // 加载训练营数据
   async loadCampData() {
     this.setData({ loading: true, error: null })
     
     try {
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       const result = await wx.cloud.callFunction({
         name: 'getCampData',
-        data: {
-          camp_id: 'camp_hengqin_2026'
-        }
+        data: { camp_id: 'camp_hengqin_2026' },
+        config: { env: cloudEnv }
       })
 
       if (result.result.success) {
@@ -334,9 +363,9 @@ Page({
   // 分享功能
   onShareAppMessage() {
     return {
-      title: `IRONMAN 70.3 横琴训练营 - ${this.data.campSubtitle || '通用训练计划'}`,
-      path: '/pages/camp/home/home',
-      imageUrl: '/images/ironman-hengqin-hero.jpg'
+      title: 'Team 7 积分小程序｜首页',
+      path: '/pages/home/home?from=camp_share',
+      imageUrl: '/images/default-image.png'
     }
   }
   ,

@@ -1,6 +1,10 @@
 <view class="container">
-  <view class="page-title">公告管理</view>
+  <view class="subtabs">
+    <view class="subtab {{subTab==='ann'?'active':''}}" data-key="ann" bindtap="switchSubTab">公告管理</view>
+    <view class="subtab {{subTab==='bulletin'?'active':''}}" data-key="bulletin" bindtap="switchSubTab">训练通告</view>
+  </view>
 
+  <view wx:if="{{subTab==='ann'}}">
   <view class="list-actions" style="display:flex; justify-content:flex-end; align-items:center; margin: 0 0 16rpx 0;">
     <button class="btn primary" bindtap="onToggleCreateForm" style="position: relative; left: -6rpx; top: -10rpx">新增公告</button>
   </view>
@@ -39,8 +43,8 @@
         </view>
         <view class="list-sub">{{item.type}} · {{item.updateTimeText}}</view>
         <view class="actions">
-          <button size="mini" bindtap="onEdit" data-id="{{item._id}}">编辑</button>
-          <button size="mini" type="warn" bindtap="onDelete" data-id="{{item._id}}">删除</button>
+          <button size="mini" class="btn-center" bindtap="onEdit" data-id="{{item._id}}">编辑</button>
+          <button size="mini" class="btn-center" type="warn" bindtap="onDelete" data-id="{{item._id}}">删除</button>
         </view>
       </view>
     </block>
@@ -85,6 +89,42 @@
         <button class="btn secondary" bindtap="onEditModalCancel">取消</button>
         <button class="btn primary" bindtap="onEditModalConfirm">确认更新</button>
       </view>
+    </view>
+  </view>
+  </view>
+
+  <view wx:if="{{subTab==='bulletin'}}">
+    <view class="list-actions" style="display:flex; justify-content:flex-end; align-items:center; margin: 0 0 16rpx 0;">
+      <button class="btn primary" bindtap="tbToggleCreateForm">新增通告</button>
+    </view>
+    <view class="card" wx:if="{{tbShowCreateForm || tbEditing.id}}">
+      <view class="section-title">训练通告编辑</view>
+      <view class="form-row"><text class="label">时间</text><input class="input" placeholder="如：12/03 19:30" bindinput="tbBindInput" data-key="time" value="{{tbEditing.time}}"/></view>
+      <view class="form-row"><text class="label">地点</text><input class="input" placeholder="如：高科体育场" bindinput="tbBindInput" data-key="location" value="{{tbEditing.location}}"/></view>
+      <view class="form-row multiline"><text class="label">内容</text><textarea class="textarea" placeholder="训练内容说明" bindinput="tbBindInput" data-key="content" value="{{tbEditing.content}}"/></view>
+      <view class="form-row"><text class="label">设为当前通告</text><switch checked="{{tbEditing.isActive}}" bindchange="tbToggleActive"/></view>
+      <view class="form-row"><text class="label">报名上限</text><input class="input" type="number" placeholder="如：30" bindinput="tbBindInput" data-key="maxParticipants" value="{{tbEditing.maxParticipants}}"/></view>
+      <view class="actions"><button class="btn primary" bindtap="tbSave">保存</button><button class="btn secondary" bindtap="tbCancel">取消</button></view>
+    </view>
+    <view class="card">
+      <view class="section-title">训练通告列表</view>
+      <block wx:for="{{tbList}}" wx:key="_id">
+        <view class="list-item">
+          <view style="display:flex; justify-content:space-between; align-items:center;">
+            <view class="list-title" bindtap="tbEdit" data-item="{{item}}">{{item.time}} · {{item.location}} · {{item.isActive?'当前':''}}</view>
+            <view style="display:flex; align-items:center; gap: 12rpx;">
+              <text class="home-switch-tip">首页展示</text>
+              <switch checked="{{item.showOnHome}}" bindchange="tbToggleHome" data-id="{{item._id}}" />
+            </view>
+          </view>
+          <view class="list-sub">{{item.content}}</view>
+          <view class="actions">
+            <button size="mini" class="btn-center" data-id="{{item._id}}" data-item="{{item}}" bindtap="tbEdit">编辑</button>
+            <button size="mini" class="btn-center" type="warn" data-id="{{item._id}}" bindtap="tbDelete">删除</button>
+          </view>
+        </view>
+      </block>
+      <view wx:if="{{tbList.length===0}}" class="empty">暂无通告</view>
     </view>
   </view>
 </view>

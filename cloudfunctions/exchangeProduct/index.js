@@ -108,8 +108,12 @@ exports.main = async (event, context) => {
       const address = (recipient.address || '').trim()
       const remark = (recipient.remark || '').trim()
       if (!name) throw new Error('请填写收件人姓名')
-      if (!/^1\d{10}$/.test(phone)) throw new Error('请填写有效的手机号')
-      if (method === 'mail' && !address) throw new Error('邮寄方式需填写详细地址')
+      if (method === 'mail') {
+        if (!/^1\d{10}$/.test(phone)) throw new Error('请填写有效的手机号')
+        if (!address) throw new Error('邮寄方式需填写详细地址')
+      } else {
+        if (phone && !/^1\d{10}$/.test(phone)) throw new Error('请填写有效的手机号或留空')
+      }
 
       // 3. 扣减用户积分 totalPoints 字段
       await transaction.collection('users').doc(user._id).update({

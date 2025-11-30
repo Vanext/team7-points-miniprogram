@@ -46,7 +46,7 @@
     <view class="form-row">
       <view class="row-label">联系方式</view>
       <input class="row-input" 
-              placeholder="请输入您的手机号码" 
+              placeholder="{{deliveryMethod === 'mail' ? '请输入您的手机号码' : '选填：请输入您的手机号码'}}" 
               value="{{receiverPhone}}" 
               type="number" 
               maxlength="11" 
@@ -90,6 +90,11 @@
   </view>
 
   <view class="actions">
-    <button class="exchange-btn" type="primary" bindtap="onExchange" disabled="{{!canExchange}}">{{exchangeBtnText}}</button>
+    <block wx:if="{{showForm}}">
+      <button class="exchange-btn" type="primary" bindtap="submitExchange">立即兑换</button>
+    </block>
+    <block wx:else>
+      <button class="exchange-btn" type="primary" bindtap="onExchange">{{exchangeBtnText}}</button>
+    </block>
   </view>
 </view>

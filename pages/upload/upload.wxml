@@ -41,10 +41,16 @@
         <textarea placeholder="请输入详细描述..." bindinput="bindDescriptionInput" value="{{description}}"></textarea>
       </view>
       <view class="form-group">
-        <label>上传图片</label>
-        <view class="image-uploader" bindtap="chooseImage">
-          <image wx:if="{{imageUrl}}" src="{{imageUrl}}" mode="aspectFill"></image>
-          <view wx:else class="upload-placeholder">+</view>
+        <label>上传图片（最多3张）</label>
+        <view class="image-grid">
+          <block wx:for="{{imageUrls}}" wx:key="index">
+            <view class="image-item">
+              <image src="{{item}}" mode="aspectFill"></image>
+            </view>
+          </block>
+          <view class="image-uploader" wx:if="{{imageUrls.length < 3}}" bindtap="chooseImage">
+            <view class="upload-placeholder">+</view>
+          </view>
         </view>
       </view>
     </view>
@@ -68,10 +74,16 @@
         <textarea placeholder="请输入详细描述..." bindinput="bindDescriptionInput" value="{{description}}"></textarea>
       </view>
       <view class="form-group">
-        <label>上传图片</label>
-        <view class="image-uploader" bindtap="chooseImage">
-          <image wx:if="{{imageUrl}}" src="{{imageUrl}}" mode="aspectFill"></image>
-          <view wx:else class="upload-placeholder">+</view>
+        <label>上传图片（最多3张）</label>
+        <view class="image-grid">
+          <block wx:for="{{imageUrls}}" wx:key="index">
+            <view class="image-item">
+              <image src="{{item}}" mode="aspectFill"></image>
+            </view>
+          </block>
+          <view class="image-uploader" wx:if="{{imageUrls.length < 3}}" bindtap="chooseImage">
+            <view class="upload-placeholder">+</view>
+          </view>
         </view>
       </view>
     </view>
@@ -103,10 +115,16 @@
         <textarea placeholder="请输入详细描述..." bindinput="bindDescriptionInput" value="{{description}}"></textarea>
       </view>
       <view class="form-group">
-        <label>上传图片</label>
-        <view class="image-uploader" bindtap="chooseImage">
-          <image wx:if="{{imageUrl}}" src="{{imageUrl}}" mode="aspectFill"></image>
-          <view wx:else class="upload-placeholder">+</view>
+        <label>上传图片（至少1张，最多3张）</label>
+        <view class="image-grid">
+          <block wx:for="{{imageUrls}}" wx:key="index">
+            <view class="image-item">
+              <image src="{{item}}" mode="aspectFill"></image>
+            </view>
+          </block>
+          <view class="image-uploader" wx:if="{{imageUrls.length < 3}}" bindtap="chooseImage">
+            <view class="upload-placeholder">+</view>
+          </view>
         </view>
       </view>
     </view>
@@ -130,10 +148,16 @@
         <textarea placeholder="请输入详细描述..." bindinput="bindDescriptionInput" value="{{description}}"></textarea>
       </view>
       <view class="form-group">
-        <label>上传图片</label>
-        <view class="image-uploader" bindtap="chooseImage">
-          <image wx:if="{{imageUrl}}" src="{{imageUrl}}" mode="aspectFill"></image>
-          <view wx:else class="upload-placeholder">+</view>
+        <label>上传图片（最多3张）</label>
+        <view class="image-grid">
+          <block wx:for="{{imageUrls}}" wx:key="index">
+            <view class="image-item">
+              <image src="{{item}}" mode="aspectFill"></image>
+            </view>
+          </block>
+          <view class="image-uploader" wx:if="{{imageUrls.length < 3}}" bindtap="chooseImage">
+            <view class="upload-placeholder">+</view>
+          </view>
         </view>
       </view>
     </view>

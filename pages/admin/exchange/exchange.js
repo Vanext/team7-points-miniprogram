@@ -36,6 +36,18 @@ Page({
     const status = e.currentTarget.dataset.status;
     this.setData({ status }, () => this.fetch());
   },
+  onCopy(e) {
+    const type = e.currentTarget.dataset.type;
+    const content = (e.currentTarget.dataset.content || '').trim();
+    if (!content) return;
+    wx.setClipboardData({
+      data: content,
+      success: () => {
+        const label = type === 'address' ? '地址' : '收件人';
+        wx.showToast({ title: `已复制${label}信息到剪贴板`, icon: 'none' });
+      }
+    });
+  },
 
   onShip(e) {
     const id = e.currentTarget.dataset.id;

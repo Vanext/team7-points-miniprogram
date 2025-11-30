@@ -114,9 +114,11 @@ Page({
             if (Array.isArray(r.images)) srcs.push(...r.images)
             if (Array.isArray(r.imageFileIDs)) srcs.push(...r.imageFileIDs)
             if (typeof r.imageFileIDs === 'string') srcs.push(r.imageFileIDs)
+            if (typeof r.evidence === 'string') srcs.push(r.evidence)
             if (r.formData) {
               if (Array.isArray(r.formData.imageFileIDs)) srcs.push(...r.formData.imageFileIDs)
               if (Array.isArray(r.formData.images)) srcs.push(...r.formData.images)
+              if (typeof r.formData.evidence === 'string') srcs.push(r.formData.evidence)
             }
             if (typeof r.imageUrl === 'string') srcs.push(r.imageUrl)
             srcs.forEach(id => { if (typeof id === 'string' && id.indexOf('cloud://') === 0) fileIds.push(id) })
@@ -149,9 +151,11 @@ Page({
             if (Array.isArray(r.images)) srcs.push(...r.images)
             if (Array.isArray(r.imageFileIDs)) srcs.push(...r.imageFileIDs)
             if (typeof r.imageFileIDs === 'string') srcs.push(r.imageFileIDs)
+            if (typeof r.evidence === 'string') srcs.push(r.evidence)
             if (r.formData) {
               if (Array.isArray(r.formData.imageFileIDs)) srcs.push(...r.formData.imageFileIDs)
               if (Array.isArray(r.formData.images)) srcs.push(...r.formData.images)
+              if (typeof r.formData.evidence === 'string') srcs.push(r.formData.evidence)
             }
             if (typeof r.imageUrl === 'string') srcs.push(r.imageUrl)
             let imgs = srcs.map(id => (idMap[id] || (String(id).startsWith('http') ? id : toAltUrl(id)))).filter(u => typeof u === 'string' && u.trim() !== '')
@@ -177,7 +181,9 @@ Page({
               const r = records[i]
               if (Array.isArray(r.imageFileIDs)) candidates.push(r.imageFileIDs[0])
               else if (typeof r.imageFileIDs === 'string') candidates.push(r.imageFileIDs)
+              if (typeof r.evidence === 'string') candidates.push(r.evidence)
               if (r.formData && Array.isArray(r.formData.imageFileIDs)) candidates.push(r.formData.imageFileIDs[0])
+              if (r.formData && typeof r.formData.evidence === 'string') candidates.push(r.formData.evidence)
               if (typeof r.imageUrl === 'string') candidates.push(r.imageUrl)
               const fid = candidates.find(s => typeof s === 'string' && s.indexOf('cloud://') === 0)
               if (fid) {

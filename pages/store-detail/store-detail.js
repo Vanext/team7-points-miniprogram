@@ -128,9 +128,12 @@ Page({
   onExchange() {
     if (!this.data.canExchange) {
       if (!this.data.userInfo) {
+        wx.showToast({ title: '请先登录', icon: 'none' });
         wx.switchTab({ url: '/pages/profile/profile' });
         return;
       }
+      const tip = this.data.exchangeBtnText || '暂不可兑换';
+      wx.showToast({ title: tip, icon: 'none' });
       return;
     }
     
@@ -145,17 +148,32 @@ Page({
   onMethodChange(e) {
     this.setData({ deliveryMethod: e.detail.value });
   },
+  onDeliveryChange(e) {
+    this.onMethodChange(e);
+  },
   
   onInput(e) {
     const field = e.currentTarget.dataset.field;
     this.setData({ [field]: e.detail.value });
   },
+  onInputChange(e) {
+    this.onInput(e);
+  },
 
   selectSize(e) {
     const size = e.currentTarget.dataset.size;
-    // 检查该尺码是否有库存
     const product = this.data.product;
     if (product.sizeStocks && product.sizeStocks[size] <= 0) {
+      wx.showToast({ title: '该尺码暂时缺货', icon: 'none' });
+      return;
+    }
+    this.setData({ selectedSize: size });
+  },
+  onSizeChange(e) {
+    const size = e.detail && e.detail.value;
+    const product = this.data.product;
+    if (!size) return;
+    if (product && product.sizeStocks && product.sizeStocks[size] <= 0) {
       wx.showToast({ title: '该尺码暂时缺货', icon: 'none' });
       return;
     }
@@ -177,8 +195,13 @@ Page({
         return;
       }
     } else {
-      if (!receiverName || !receiverPhone) {
-        wx.showToast({ title: '请填写联系人和电话', icon: 'none' });
+      if (!receiverName) {
+        wx.showToast({ title: '请填写联系人', icon: 'none' });
+        return;
+      }
+      // 当面交易手机号选填：如填写则需为有效手机号
+      if (receiverPhone && !/^1\d{10}$/.test(receiverPhone)) {
+        wx.showToast({ title: '请输入有效手机号或留空', icon: 'none' });
         return;
       }
     }
@@ -195,19 +218,20 @@ Page({
         },
         data: {
           productId: product._id,
-          productName: product.name,
-          points: product.points,
-          deliveryMethod,
-          receiverName,
-          receiverPhone,
-          receiverAddress: deliveryMethod === 'mail' ? receiverAddress : '自提',
-          remark,
-          size: selectedSize
+          quantity: 1,
+          recipient: {
+            method: deliveryMethod,
+            name: receiverName,
+            phone: receiverPhone,
+            address: deliveryMethod === 'mail' ? receiverAddress : '',
+            remark
+          },
+          selectedSize: selectedSize
         }
       });
       
-      if (res.result.success) {
-        app.showToast('兑换成功');
+      if (res.result && res.result.success) {
+        app.showToast(res.result.message || '兑换成功');
         this.setData({ showForm: false });
         // 刷新页面数据
         this.loadProductDetail(product._id);
@@ -216,7 +240,8 @@ Page({
           app.globalData.userInfo.totalPoints -= product.points;
         }
       } else {
-        throw new Error(res.result.message);
+        const msg = (res.result && res.result.message) || '兑换失败';
+        throw new Error(msg);
       }
     } catch (err) {
       console.error('兑换失败', err);

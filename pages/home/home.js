@@ -6,23 +6,33 @@ Page({
     userInfo: {},
     announcements: [],
     recentPoints: [],
-    partners: Array(6).fill({ url: '' }),
+    partners: Array(6).fill({ key: '', url: '' }),
     annExpandedIndex: -1,
-    loading: true,
-    isLoggedIn: false
+    loading: false,
+    isLoggedIn: false,
+    isAdmin: false,
+    partnerKeys: ['descente','qrtri','quintanaroo','kse','extra1','extra2'],
+    bulletins: [],
+    joinedMap: {},
+    expandedIds: [],
+    myOpenid: ''
   },
 
   onLoad() {
     this.loadData()
-    const cachedPartners = wx.getStorageSync('partners_config')
-    if (cachedPartners) {
-      this.setData({ partners: cachedPartners })
-    }
+    this.fetchPartnersFromCloud()
+    this.fetchTrainingBulletin()
   },
 
   onShow() {
     this.loadData()
+    this.fetchPartnersFromCloud()
+    this.fetchTrainingBulletin()
     this.startAnnAutoScroll()
+    try {
+      wx.cloud.callFunction({ name: 'statisticsManager', data: { action: 'recordVisit', data: { category: 'home', page: 'pages/home/home' } } })
+    } catch (_) {}
+    wx.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'] })
   },
 
   async loadData() {
@@ -66,7 +76,7 @@ Page({
         userInfo = { ...u, nickName: displayName, avatarUrl: avatar, isActivated: true }
         app.globalData.userInfo = userInfo;
         app.globalData.isAdmin = u.isAdmin === true
-        this.setData({ isLoggedIn: true })
+        this.setData({ isLoggedIn: true, isAdmin: app.globalData.isAdmin === true })
       }
 
       // 3. 获取公告 (直接查询数据库)
@@ -103,7 +113,8 @@ Page({
         userInfo,
         announcements,
         recentPoints: [],
-        campStatus
+        campStatus,
+        myOpenid: openid
       })
       
     } catch (error) {
@@ -155,11 +166,9 @@ Page({
   },
 
   navigateToTrainingAssistant() {
-    wx.navigateTo({
-      url: '/pages/training-assistant/training-assistant'
-    })
-  }
-  ,
+    wx.navigateTo({ url: '/pages/training-assistant/training-assistant' })
+  },
+
   navigateToTools() {
     wx.navigateTo({
       url: '/pages/tools/tools'
@@ -168,7 +177,7 @@ Page({
   onJoinCamp() {
     const status = this.data.campStatus
     if (status === 'approved') {
-      wx.navigateTo({ url: '/pages/camp/home/home' })
+      wx.navigateTo({ url: '/pages/camp/home/home?approved=1' })
       return
     }
     const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
@@ -227,32 +236,50 @@ Page({
     }
   },
 
+  async fetchPartnersFromCloud() {
+    try {
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const res = await wx.cloud.callFunction({ name: 'statisticsManager', data: { action: 'getPartners' }, config: { env: cloudEnv } })
+      const list = (res.result && res.result.data && res.result.data.list) || []
+      const partnerKeys = this.data.partnerKeys
+      let ordered = partnerKeys.map(k => {
+        const found = list.find(it => it.key === k) || { key: k, url: '', fileID: '' }
+        return { key: found.key, url: found.url || '', fileID: found.fileID || '' }
+      })
+      const missing = ordered.filter(it => it.fileID && !it.url)
+      if (missing.length) {
+        try {
+          const r = await wx.cloud.getTempFileURL({ fileList: missing.map(m => m.fileID) })
+          const map = {}
+          ;(r.fileList || []).forEach(f => { map[f.fileID] = f.tempFileURL || '' })
+          ordered = ordered.map(it => ({ key: it.key, url: it.url || (it.fileID ? (map[it.fileID] || '') : ''), fileID: it.fileID }))
+        } catch (_) {}
+      }
+      this.setData({ partners: ordered.map(it => ({ key: it.key, url: it.url })) })
+    } catch (err) {
+      console.error('获取合作伙伴失败', err)
+    }
+  },
+
   uploadPartnerImage(e) {
+    if (!this.data.isAdmin) { wx.showToast({ title: '仅管理员可上传', icon: 'none' }); return }
     const index = e.currentTarget.dataset.index
+    const key = this.data.partnerKeys[index] || `extra${index}`
     wx.chooseImage({
       count: 1,
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
       success: async (res) => {
         const tempFilePath = res.tempFilePaths[0]
-        const cloudPath = `partners/partner_${index}_${Date.now()}.png`
+        const cloudPath = `partners/${key}_${Date.now()}.png`
         
         wx.showLoading({ title: '上传中...' })
         
         try {
-          const { fileID } = await wx.cloud.uploadFile({
-            cloudPath,
-            filePath: tempFilePath,
-            config: {
-              env: app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-            }
-          })
-          
-          const partners = this.data.partners
-          partners[index] = { url: fileID }
-          this.setData({ partners })
-          wx.setStorageSync('partners_config', partners)
-          
+          const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+          const { fileID } = await wx.cloud.uploadFile({ cloudPath, filePath: tempFilePath, config: { env: cloudEnv } })
+          await wx.cloud.callFunction({ name: 'statisticsManager', data: { action: 'upsertPartner', data: { key, fileID } }, config: { env: cloudEnv } })
+          await this.fetchPartnersFromCloud()
           wx.hideLoading()
           wx.showToast({ title: '上传成功', icon: 'success' })
         } catch (error) {
@@ -262,5 +289,115 @@ Page({
         }
       }
     })
+  },
+
+  onShareAppMessage() {
+    return {
+      title: 'Team 7 积分小程序｜首页',
+      path: '/pages/home/home?ref=share'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: 'Team 7 积分小程序｜首页',
+      query: 'ref=timeline'
+    }
   }
+,
+  async fetchTrainingBulletin() {
+    try {
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const r = await wx.cloud.callFunction({ name: 'trainingBulletins', config: { env: cloudEnv }, data: { action: 'getActive', data: { limit: 2 } } })
+      const data = r.result && r.result.data
+      if (r.result && r.result.success && data && Array.isArray(data.bulletins)) {
+        const list = data.bulletins.map(x => {
+          const seen = {}
+          const named = []
+          ;(x.participants || []).forEach(p => {
+            const k = (p && p.openid) || ''
+            const nm = (p && p.nickName) || ''
+            if (!k || seen[k]) return
+            seen[k] = 1
+            if (nm && nm !== '未登录' && nm !== '微信用户') named.push({ openid: k, nickName: nm })
+          })
+          return { ...x.bulletin, joined: !!x.joined, participants: named, expanded: false }
+        })
+        const joined = {}
+        list.forEach(it => { joined[it._id] = !!it.joined })
+        this.setData({ bulletins: list, joinedMap: joined })
+      } else {
+        this.setData({ bulletins: [], joinedMap: {} })
+      }
+    } catch (_) {
+      this.setData({ bulletins: [], joinedMap: {} })
+    }
+  },
+
+  async toggleJoinBulletin(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id) return
+    const b = (this.data.bulletins || []).find(x => x._id === id)
+    if (!b) return
+    const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+    const action = this.data.joinedMap[id] ? 'leave' : 'join'
+    const rawNick = (this.data.userInfo && (this.data.userInfo.nickName || this.data.userInfo.nickname || this.data.userInfo.realName)) || ''
+    const validNick = (!!rawNick && rawNick !== '未登录' && rawNick !== '微信用户')
+    const nick = validNick ? rawNick : ''
+    wx.showLoading({ title: action === 'join' ? '加入中...' : '取消中...' })
+    try {
+      if (action === 'join' && b.reminderTemplateId) {
+        try { await wx.requestSubscribeMessage({ tmplIds: [b.reminderTemplateId] }) } catch (_) {}
+      }
+      const r = await wx.cloud.callFunction({ name: 'trainingBulletins', config: { env: cloudEnv }, data: { action, data: { bulletinId: b._id, nickName: nick } } })
+      wx.hideLoading()
+      if (r.result && r.result.success) {
+        // 乐观更新本地数据，立即显示标签
+        const list = (this.data.bulletins || []).map(x => {
+          if (x._id !== id) return x
+          const participants = Array.isArray(x.participants) ? x.participants.slice() : []
+          if (action === 'join') {
+            const me = this.data.myOpenid
+            if (me) {
+              const exists = participants.some(p => p.openid === me)
+              if (!exists && validNick) participants.push({ openid: me, nickName: nick })
+            }
+          } else {
+            const filtered = participants.filter(p => p.openid !== this.data.myOpenid)
+            return { ...x, participants: filtered, joined: false }
+          }
+          const seen = {}
+          const dedup = []
+          participants.forEach(p => {
+            const k = p.openid
+            if (!k || seen[k]) return
+            seen[k] = 1
+            dedup.push(p)
+          })
+          return { ...x, participants: dedup, joined: action === 'join' }
+        })
+        const jm = { ...this.data.joinedMap, [id]: action === 'join' }
+        this.setData({ bulletins: list, joinedMap: jm })
+        // 后续拉取以与云端数据对齐
+        await this.fetchTrainingBulletin()
+        wx.showToast({ title: action === 'join' ? '已加入' : '已取消', icon: 'success' })
+      } else {
+        const msg = (r.result && r.result.message) || '操作失败'
+        wx.showToast({ title: msg, icon: 'none' })
+      }
+    } catch (e) {
+      wx.hideLoading()
+      wx.showToast({ title: '网络错误', icon: 'none' })
+    }
+  },
+
+  toggleParticipantsExpanded(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id) return
+    const list = (this.data.bulletins || []).map(x => {
+      if (x._id === id) return { ...x, expanded: !x.expanded }
+      return x
+    })
+    this.setData({ bulletins: list })
+  },
 })

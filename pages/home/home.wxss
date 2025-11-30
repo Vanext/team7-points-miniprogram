@@ -249,3 +249,17 @@ page {
 .ann-content-expanded { max-height: none; }
 .ann-content-scroll { max-height: 140rpx; }
 .ann-content { font-size: 26rpx; color: #666; line-height: 1.6; white-space: pre-wrap; }
+
+/* Bulletin Card */
+.bulletin-card { background: white; border-radius: 20rpx; padding: 20rpx; margin-bottom: 16rpx; box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.05); }
+.bulletin-header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 8rpx; }
+.bulletin-subheader { display:flex; justify-content: flex-start; align-items: center; gap: 8rpx; margin-bottom: 8rpx; }
+.bulletin-title { font-size: 32rpx; font-weight: bold; color:#333; }
+.bulletin-time { font-size: 22rpx; color:#666; }
+.bulletin-sep { font-size: 22rpx; color:#aaa; }
+.bulletin-location { font-size: 22rpx; color:#666; }
+.bulletin-content { font-size: 26rpx; color:#333; line-height:1.7; margin-bottom: 12rpx; white-space: pre-wrap; word-break: break-word; }
+.bulletin-actions { margin-bottom: 6rpx; display:flex; align-items:center; gap: 12rpx; }
+.join-btn { background:#1a237e; color:#fff; border-radius: 7rpx; padding: 5rpx 12rpx; display:inline-block; font-size: 24rpx; line-height: normal; }
+.participants-inline { flex:1; overflow:hidden; white-space:nowrap; }
+.participants-inline .participant-chip { display:inline-block; background:#eef2ff; color:#1a237e; padding: 6rpx 12rpx; border-radius: 999rpx; font-size: 20rpx; margin-right: 8rpx; }

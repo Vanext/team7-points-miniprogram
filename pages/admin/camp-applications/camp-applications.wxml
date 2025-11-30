@@ -39,6 +39,7 @@
           <view class="card-actions actions-grid">
             <button class="action-btn admin-btn {{currentTab==='pending'?'add':'remove'}}" wx:if="{{currentTab==='pending'}}" data-id="{{item._id}}" bindtap="approve">通过</button>
             <button class="action-btn lock-btn lock" wx:if="{{currentTab==='pending'}}" data-id="{{item._id}}" bindtap="reject">拒绝</button>
+            <button class="action-btn lock-btn remove" wx:if="{{currentTab==='approved'}}" data-id="{{item._id}}" bindtap="cancelApproved">取消通过</button>
           </view>
         </view>
       </block>

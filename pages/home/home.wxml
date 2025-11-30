@@ -84,6 +84,35 @@
     </swiper>
   </view>
 
+  <!-- Training Bulletins Carousel -->
+  <view class="card bulletin-card" wx:if="{{bulletins.length > 0}}">
+    <view class="bulletin-header">
+      <text class="bulletin-title">训练通告</text>
+    </view>
+    <swiper autoplay="true" interval="5000" circular="true" indicator-dots="true">
+      <block wx:for="{{bulletins}}" wx:key="_id">
+        <swiper-item>
+          <view>
+            <view class="bulletin-subheader">
+              <text class="bulletin-time">{{item.time}}</text>
+              <text class="bulletin-sep">·</text>
+              <text class="bulletin-location">{{item.location}}</text>
+            </view>
+            <view class="bulletin-content">{{item.content}}</view>
+            <view class="bulletin-actions">
+              <view class="join-btn" data-id="{{item._id}}" bindtap="toggleJoinBulletin">{{joinedMap[item._id] ? '取消' : '接龙'}}</view>
+              <scroll-view class="participants-inline" scroll-x="true">
+                <block wx:for="{{item.participants}}" wx:key="openid" wx:for-item="p">
+                  <text class="participant-chip">{{p.nickName || '微信用户'}}</text>
+                </block>
+              </scroll-view>
+            </view>
+          </view>
+        </swiper-item>
+      </block>
+    </swiper>
+  </view>
+
   <!-- Banner -->
   <view class="camp-section">
     <view class="camp-card" bindtap="onJoinCamp">

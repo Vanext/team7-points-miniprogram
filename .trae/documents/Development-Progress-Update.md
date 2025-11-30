@@ -3,6 +3,14 @@
 ## 项目概述
 本文档记录了团队7积分小程序的所有功能修改和实现进度，包括负积分支持、会员兑换锁定机制、云存储权限修复等核心功能。
 
+## 归档与回滚保障（简版 | 2025-11-29）
+- 私有归档仓库：`team7-points-miniprogram-frontend-archive-20251128`（分支 `main`）
+- 最新提交：`e9528a4afc75e22aeffd5dcae021825909752307`
+- 覆盖范围：前端 `pages/*`、`app.js/app.wxss`；后端 `cloudfunctions/*`；数据库结构 `db-schema/*`
+- 环境一致性：云函数采用 `cloud.DYNAMIC_CURRENT_ENV`，避免硬编码环境ID
+- 索引快照：已包含 `point_records` 的核心复合索引（`status + _openid`、`_openid + submitTime`）
+- 验证与回滚要点：拉取后抽样对比；前端与云函数按归档覆盖；索引按 `db-schema/indexes/*.json` 检查并恢复
+
 ## 已实现功能
 
 ### 1. 负积分支持 (✅ 已完成)

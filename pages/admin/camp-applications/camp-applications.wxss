@@ -24,6 +24,7 @@
 .action-btn { display: inline-flex; align-items: center; height: 64rpx; padding: 0 24rpx; border-radius: 12rpx; font-weight: 600; }
 .admin-btn.add { background: linear-gradient(135deg,#4caf50,#66bb6a); color: #fff; }
 .lock-btn.lock { background: linear-gradient(135deg,#f44336,#ef5350); color: #fff; }
+.lock-btn.remove { background: linear-gradient(135deg,#ff9800,#ffb74d); color: #fff; }
 .no-access-card { background: #fff; border-radius: 16rpx; padding: 80rpx 40rpx; text-align: center; box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.08); margin-top: 100rpx; }
 .no-access-icon { font-size: 80rpx; margin-bottom: 30rpx; display: block; }
 .no-access-title { font-size: 32rpx; font-weight: 600; color: #2c3e50; margin-bottom: 15rpx; display: block; }

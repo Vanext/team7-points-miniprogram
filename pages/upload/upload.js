@@ -5,8 +5,8 @@ Page({
     currentTab: 2, // Default to Training as per screenshot
     date: '',
     description: '',
-    imageUrl: '',
-    fileId: '',
+    imageUrls: [],
+    fileIds: [],
     showRulesModal: false,
     
     // Match Data
@@ -51,8 +51,8 @@ Page({
       // Reset form fields slightly but keep date? Or reset all? 
       // Let's keep date, reset others for better UX
       description: '',
-      imageUrl: '',
-      fileId: '',
+      imageUrls: [],
+      fileIds: [],
       selectedMatchType: '',
       isPodium: false,
       selectedActivityType: '',
@@ -105,32 +105,32 @@ Page({
 
   // Image Upload
   chooseImage() {
+    const remain = Math.max(0, 3 - (this.data.imageUrls.length || 0))
+    if (remain <= 0) { wx.showToast({ title: '最多上传3张', icon: 'none' }); return }
     wx.chooseMedia({
-      count: 1,
+      count: remain,
       mediaType: ['image'],
       sourceType: ['album', 'camera'],
       success: async (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath
-        this.setData({ imageUrl: tempFilePath })
-        
+        const files = res.tempFiles || []
+        if (!files.length) return
         wx.showLoading({ title: '上传图片中...' })
-        
         try {
-          const cloudPath = `uploads/${Date.now()}-${Math.floor(Math.random() * 1000)}.jpg`
-          const uploadRes = await wx.cloud.uploadFile({
-            cloudPath: cloudPath,
-            filePath: tempFilePath
-          })
-          
-          this.setData({ fileId: uploadRes.fileID })
-          wx.hideLoading()
+          const urls = (this.data.imageUrls || []).slice()
+          const ids = (this.data.fileIds || []).slice()
+          for (let i = 0; i < files.length; i++) {
+            const tempFilePath = files[i].tempFilePath
+            const cloudPath = `uploads/${Date.now()}-${Math.floor(Math.random() * 100000)}-${i}.jpg`
+            const uploadRes = await wx.cloud.uploadFile({ cloudPath, filePath: tempFilePath })
+            urls.push(tempFilePath)
+            ids.push(uploadRes.fileID)
+          }
+          this.setData({ imageUrls: urls.slice(0,3), fileIds: ids.slice(0,3) })
         } catch (err) {
           console.error('Upload failed', err)
+          wx.showToast({ title: '图片上传失败', icon: 'none' })
+        } finally {
           wx.hideLoading()
-          wx.showToast({
-            title: '图片上传失败',
-            icon: 'none'
-          })
         }
       }
     })
@@ -138,7 +138,7 @@ Page({
 
   // Submit Form
   async submitForm() {
-    const { currentTab, date, description, fileId, selectedMatchType, isPodium, selectedActivityType, selectedHours, selectedConstructionType } = this.data
+    const { currentTab, date, description, fileIds, selectedMatchType, isPodium, selectedActivityType, selectedHours, selectedConstructionType } = this.data
 
     // Validation
     if (!description) {
@@ -161,7 +161,7 @@ Page({
         matchType: selectedMatchType,
         isPodium,
         description,
-        evidence: fileId
+        images: fileIds
       }
       
       // Calculate points (Mock logic based on rules)
@@ -186,7 +186,7 @@ Page({
         date,
         activityType: selectedActivityType,
         description,
-        evidence: fileId
+        images: fileIds
       }
       
       const pointMap = {
@@ -200,7 +200,7 @@ Page({
         wx.showToast({ title: '请选择训练时长', icon: 'none' })
         return
       }
-      if (!fileId) {
+      if (!fileIds || fileIds.length === 0) {
          wx.showToast({ title: '请上传打卡图片', icon: 'none' })
          return
       }
@@ -211,7 +211,7 @@ Page({
         date,
         selectedHours,
         description,
-        evidence: fileId
+        images: fileIds
       }
       
       // Points: 2 points per hour
@@ -228,7 +228,7 @@ Page({
         date,
         constructionType: selectedConstructionType,
         description,
-        evidence: fileId
+        images: fileIds
       }
       
       const pointMap = {
@@ -251,7 +251,8 @@ Page({
           categoryId,
           categoryName,
           points,
-          formData
+          formData,
+          imageFileIDs: fileIds
         }
       })
 
@@ -268,8 +269,8 @@ Page({
         setTimeout(() => {
           this.setData({
             description: '',
-            imageUrl: '',
-            fileId: '',
+            imageUrls: [],
+            fileIds: [],
             selectedMatchType: '',
             isPodium: false,
             selectedActivityType: '',

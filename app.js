@@ -154,7 +154,21 @@ App({
 
   // 保存用户信息（保留方法以兼容旧调用，但不覆盖数据库字段）
   saveUserInfo(userInfo) {
-    const merged = { ...(this.globalData.userInfo || {}), ...(userInfo || {}) }
+    const prev = this.globalData.userInfo || {}
+    const incoming = userInfo || {}
+    const sanitized = { ...incoming }
+    // 避免用占位符覆盖已有头像/昵称
+    if (!incoming.avatarUrl || incoming.avatarUrl === '/images/default-avatar.png') {
+      sanitized.avatarUrl = prev.avatarUrl || incoming.avatarUrl
+    }
+    const incName = incoming.nickName || incoming.nickname || incoming.realName
+    const prevName = prev.nickName || prev.nickname || prev.realName
+    if (!incName || incName === '微信用户' || incName === '未登录') {
+      if (prevName) {
+        sanitized.nickName = prev.nickName || prev.nickname || prev.realName
+      }
+    }
+    const merged = { ...prev, ...sanitized }
     this.globalData.userInfo = merged
     wx.setStorageSync('userInfo', merged)
     const token = 'mock_token_' + Date.now()

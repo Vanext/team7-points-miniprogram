@@ -21,3 +21,11 @@
 - 本项目使用了微信云开发
 - 请确保网络连接正常
 - 首次使用需要进行登录授权
+
+## 最近归档更新摘要（2025-11-29）
+- 创建私有归档仓库：`team7-points-miniprogram-frontend-archive-20251128`（分支 `main`）
+- 最新提交：`e9528a4afc75e22aeffd5dcae021825909752307`
+- 归档范围：前端 `pages/*`、`app.js/app.wxss`，后端 `cloudfunctions/*`，数据库结构 `db-schema/*`
+- 环境一致性：云函数统一使用 `cloud.DYNAMIC_CURRENT_ENV`
+- 索引快照：包含 `point_records` 的 `status + _openid`、`_openid + submitTime` 等复合索引
+- 验证与回滚：拉取仓库后抽样对比函数与页面；前端/云函数/索引分别按归档目录覆盖与恢复

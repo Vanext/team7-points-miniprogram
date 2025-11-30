@@ -34,24 +34,38 @@ Page({
               const rows = (r.result && r.result.data) || []
               const list = rows.map(it => ({ ...it, applyTimeText: this.format(it.applyTime) }))
               this.setData({ list })
-            } catch (_) {
-              const db = wx.cloud.database({ env: cloudEnv })
-              const where = this.data.currentTab === 'pending' ? { status: 'pending' } : (this.data.currentTab === 'approved' ? { status: 'approved' } : { status: 'rejected' })
-              const res = await db.collection('camp_applications').where(where).orderBy('applyTime', 'desc').limit(50).get()
-              const rows = res.data || []
-              const openids = [...new Set(rows.map(x => x._openid).filter(Boolean))]
-              let userMap = {}
-              if (openids.length) {
-                const _ = db.command
-                const ur = await db.collection('users').where({ _openid: _.in(openids) }).get()
-                (ur.data || []).forEach(u => { userMap[u._openid] = u })
+            } catch (_err) {
+              try {
+                const db = wx.cloud.database({ env: cloudEnv })
+                const where = this.data.currentTab === 'pending' ? { status: 'pending' } : (this.data.currentTab === 'approved' ? { status: 'approved' } : { status: 'rejected' })
+                const res = await db.collection('camp_applications').where(where).orderBy('applyTime', 'desc').limit(50).get()
+                const rows = res.data || []
+                const seen = {}
+                const uniqRows = []
+                for (const it of rows) {
+                  const k = it && it._openid
+                  if (!k || seen[k]) continue
+                  seen[k] = 1
+                  uniqRows.push(it)
+                }
+                const openids = uniqRows.map(x => x._openid).filter(Boolean)
+                let userMap = {}
+                if (openids.length) {
+                  const _ = db.command
+                  const ur = await db.collection('users').where({ _openid: _.in(openids) }).get()
+                  ;(ur.data || []).forEach(u => { userMap[u._openid] = u })
+                }
+                const list = uniqRows.map(it => ({
+                  ...it,
+                  nickName: (userMap[it._openid] && (userMap[it._openid].nickName || userMap[it._openid].realName)) || '',
+                  applyTimeText: this.format(it.applyTime)
+                }))
+                this.setData({ list })
+              } catch (err2) {
+                console.error('列表加载失败(本地回退也失败):', err2)
+                this.setData({ list: [] })
+                wx.showToast({ title: '暂无申请或权限不足', icon: 'none' })
               }
-              const list = rows.map(it => ({
-                ...it,
-                nickName: (userMap[it._openid] && (userMap[it._openid].nickName || userMap[it._openid].realName)) || '',
-                applyTimeText: this.format(it.applyTime)
-              }))
-              this.setData({ list })
             }
     } catch (err) {
       wx.showToast({ title: '加载失败', icon: 'none' })
@@ -106,6 +120,33 @@ Page({
         await db.collection('camp_applications').doc(id).update({ data: { status: 'rejected', rejectTime: Date.now() } })
         wx.hideLoading()
         wx.showToast({ title: '已拒绝', icon: 'success' })
+        this.loadList()
+      }
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '操作失败', icon: 'none' })
+      console.error(err)
+    }
+  },
+
+  async cancelApproved(e) {
+    const id = e.currentTarget.dataset.id
+    const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+    wx.showLoading({ title: '撤回中...' })
+    try {
+      try {
+        const r = await wx.cloud.callFunction({ name: 'campApplication', config: { env: cloudEnv }, data: { action: 'cancelApproved', data: { id } } })
+        wx.hideLoading()
+        if (r.result && r.result.success) {
+          wx.showToast({ title: '已撤回', icon: 'success' })
+          this.loadList()
+          return
+        }
+      } catch (_) {
+        const db = wx.cloud.database({ env: cloudEnv })
+        await db.collection('camp_applications').doc(id).update({ data: { status: 'rejected', cancelTime: Date.now() } })
+        wx.hideLoading()
+        wx.showToast({ title: '已撤回', icon: 'success' })
         this.loadList()
       }
     } catch (err) {

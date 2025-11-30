@@ -11,6 +11,7 @@
     <button wx:if="{{error === '仅正式会员可访问训练营功能'}}" class="upgrade-btn" bindtap="contactCoach">
       升级会员
     </button>
+    <button wx:elif="{{error === '请先登录'}}" class="retry-btn" bindtap="reloadOrLogin">重新加载</button>
     <button wx:else class="retry-btn" bindtap="loadCampData">重新加载</button>
   </view>
 

@@ -22,13 +22,13 @@
         </view>
         <view class="row">
           <text>方式：{{item.recipient.method === 'mail' ? '邮寄' : '当面'}}</text>
-          <text>收件人：{{item.recipient.name}}（{{item.recipient.phone}}）</text>
+          <text class="copyable" data-type="recipient" data-content="{{item.recipient.name}}（{{item.recipient.phone}}）" bindtap="onCopy">收件人：{{item.recipient.name}}（{{item.recipient.phone}}）</text>
         </view>
         <view class="row" wx:if="{{item.selectedSize}}">
           <text>尺码：{{item.selectedSize}}</text>
         </view>
         <view class="row" wx:if="{{item.recipient.method==='mail'}}">
-          <text>地址：{{item.recipient.address}}</text>
+          <text class="copyable" data-type="address" data-content="{{item.recipient.address}}" bindtap="onCopy">地址：{{item.recipient.address}}</text>
         </view>
         <view class="row" wx:if="{{item.recipient.remark}}">
           <text>备注：{{item.recipient.remark}}</text>
