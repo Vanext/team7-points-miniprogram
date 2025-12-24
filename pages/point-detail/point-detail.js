@@ -35,6 +35,10 @@ Page({
 
       const records = res.data.map(item => {
         item.formattedSubmitTime = app.formatTime(item.submitTime);
+        // 优先显示详细描述(description)，其次显示分类名称(categoryName)，最后显示原因(reason)或默认文案
+        // description: 通常用于兑换商品、管理员调整等
+        // categoryName: 通常用于用户提交的积分申请（如训练打卡）
+        item.displayReason = item.description || item.categoryName || item.reason || '积分变动';
         return item;
       });
 

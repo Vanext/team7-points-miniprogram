@@ -46,8 +46,7 @@ exports.main = async (event, context) => {
           createTime: db.serverDate(),
           updateTime: db.serverDate(),
           totalPoints: 0,
-          isAdmin: false,
-          isActivated: true
+          isAdmin: false
         }
       })
       return { success: true, message: '用户已创建', isNew: true }

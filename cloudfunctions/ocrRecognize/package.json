@@ -1,9 +1,0 @@
-{
-  "name": "ocrRecognize",
-  "version": "1.0.0",
-  "description": "Cloud function for OCR recognition using Tencent Cloud OCR",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "^3.0.1"
-  }
-}

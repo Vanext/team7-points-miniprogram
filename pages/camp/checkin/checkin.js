@@ -1,5 +1,3 @@
-const ocr = require('../../../utils/ocr')
-
 Page({
   data: {
     campId: '',
@@ -15,6 +13,34 @@ Page({
     inputMinutesStr: '',
     completionRate: 0
   },
+  getFileExt(filePath, fallbackExt = 'jpg') {
+    const m = String(filePath || '').match(/\.([a-zA-Z0-9]+)(?:\?|#|$)/)
+    return (m && m[1] ? m[1] : fallbackExt).toLowerCase()
+  },
+  getFileSizeBytes(filePath) {
+    return new Promise((resolve) => {
+      wx.getFileInfo({
+        filePath,
+        success: (res) => resolve(res && typeof res.size === 'number' ? res.size : 0),
+        fail: () => resolve(0)
+      })
+    })
+  },
+  async compressImageForUpload(filePath) {
+    const originalPath = filePath
+    const size = await this.getFileSizeBytes(originalPath)
+    if (!size || size <= 900 * 1024) return originalPath
+    let quality = 80
+    if (size > 5 * 1024 * 1024) quality = 60
+    else if (size > 2 * 1024 * 1024) quality = 70
+    try {
+      const out = await wx.compressImage({ src: originalPath, quality })
+      const compressedPath = (out && out.tempFilePath) || originalPath
+      return compressedPath
+    } catch (_) {
+      return originalPath
+    }
+  },
   onLoad(options) {
     const campId = options.camp_id || 'camp_hengqin_2026'
     const week = parseInt(options.week || '1')
@@ -22,49 +48,24 @@ Page({
     const plannedHours = plannedMinutes ? Math.round((plannedMinutes / 60) * 10) / 10 : 0
     this.setData({ campId, week, plannedMinutes, plannedHours })
   },
-  chooseImage() {
-    wx.chooseImage({ count: 1 }).then(res => {
+  async chooseImage() {
+    try {
+      const res = await wx.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'] })
       const filePath = res.tempFilePaths[0]
       this.setData({ images: [filePath] })
-      const ext = (filePath.split('.').pop() || 'jpg').toLowerCase()
+      const uploadPath = await this.compressImageForUpload(filePath)
+      const ext = this.getFileExt(uploadPath, 'jpg')
       const cloudPath = `t7_images/camp_checkin/${Date.now()}.${ext}`
-      return wx.cloud.uploadFile({ cloudPath, filePath })
-    }).then(up => {
-      this.setData({ uploadedFileID: up.fileID })
-      wx.showToast({ title: '正在识别截图文字...', icon: 'none' })
-      return ocr.recognizeTextByFileID(up.fileID)
-    }).then(text => {
-      // 自动解析训练分钟
-      const minutes = this.parseMinutes(text)
-      const hours = Math.round((minutes / 60) * 10) / 10
-      const canSubmit = minutes > 0 && !!this.data.uploadedFileID
-      this.setData({ actualMinutes: minutes, actualHours: hours, canSubmit, inputHoursStr: String(hours), inputMinutesStr: '' })
-      this.updateCompletion()
-      if (minutes > 0) {
-        wx.showToast({ title: `识别成功：${hours}小时`, icon: 'success' })
-      } else {
-        wx.showToast({ title: '未识别到时长，请手动输入', icon: 'none' })
-      }
-    }).catch(err => {
-      const canSubmit = !!this.data.uploadedFileID && this.data.actualMinutes > 0
+      const up = await wx.cloud.uploadFile({ cloudPath, filePath: uploadPath })
+      const uploadedFileID = up.fileID
+      const canSubmit = !!uploadedFileID && (this.data.actualMinutes || 0) > 0
+      this.setData({ uploadedFileID, canSubmit })
+      wx.showToast({ title: '上传成功，请手动输入时长', icon: 'none' })
+    } catch (err) {
+      const canSubmit = !!this.data.uploadedFileID && (this.data.actualMinutes || 0) > 0
       this.setData({ canSubmit })
-      wx.showToast({ title: '识别失败，请手动输入', icon: 'none' })
-    })
-  },
-  parseMinutes(text) {
-    const s = (text || '').toLowerCase()
-    let h = 0, m = 0
-    const mm = s.match(/(\d{1,2})\s*[:：]\s*(\d{1,2})/)
-    if (mm) { h = parseInt(mm[1]); m = parseInt(mm[2]); return h * 60 + m }
-    const hm = s.match(/(\d+(?:\.\d+)?)\s*h(\d+)?\s*m?/)
-    if (hm) { h = parseFloat(hm[1]); m = hm[2] ? parseInt(hm[2]) : 0; return Math.round(h * 60 + m) }
-    const zh = s.match(/(\d+(?:\.\d+)?)\s*小?时(\d+)?\s*分?/)
-    if (zh) { h = parseFloat(zh[1]); m = zh[2] ? parseInt(zh[2]) : 0; return Math.round(h * 60 + m) }
-    const onlyH = s.match(/(\d+(?:\.\d+)?)\s*(h|小?时)/)
-    if (onlyH) { const hh = parseFloat(onlyH[1]); return Math.round(hh * 60) }
-    const onlyM = s.match(/(\d+)\s*(m|分)/)
-    if (onlyM) { return parseInt(onlyM[1]) }
-    return 0
+      wx.showToast({ title: '上传失败，请重试', icon: 'none' })
+    }
   },
   onHoursInput(e) {
     let v = parseFloat(String(e.detail.value || '0').replace(/[^\d.]/g, ''))

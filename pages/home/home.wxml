@@ -16,8 +16,8 @@
         <view class="user-text-info">
            <view class="user-name">{{isLoggedIn ? (userInfo.nickName || '微信用户') : '未登录'}}</view>
            <view class="user-status-wrapper">
-             <text class="status-badge {{userInfo.isActivated ? 'activated' : 'inactive'}}">
-               {{userInfo.isActivated ? '已激活' : '未激活'}}
+             <text class="status-badge {{userInfo.isExchangeActivated ? 'activated' : 'inactive'}}">
+               {{userInfo.isExchangeActivated ? '已激活' : '未激活'}}
              </text>
            </view>
         </view>

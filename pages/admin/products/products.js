@@ -9,8 +9,8 @@ Page({
     showCreateForm: false,
     editingId: '',
     products: [],
-    form: { name: '', points: '', stock: '', image: '', imageUrl: '', description: '', sizesEnabled: true, sizeStocks: { XS: 0, S: 0, M: 0, L: 0, XL: 0, '2XL': 0, '3XL': 0 } },
-    editForm: { name: '', points: '', stock: '', image: '', imageUrl: '', description: '', sizesEnabled: false, sizeStocks: { XS: 0, S: 0, M: 0, L: 0, XL: 0, '2XL': 0, '3XL': 0 } }
+    form: { name: '', points: '', stock: '', image: '', imageUrl: '', images: [], description: '', sizesEnabled: true, sizeStocks: { XS: 0, S: 0, M: 0, L: 0, XL: 0, '2XL': 0, '3XL': 0 } },
+    editForm: { name: '', points: '', stock: '', image: '', imageUrl: '', images: [], description: '', sizesEnabled: false, sizeStocks: { XS: 0, S: 0, M: 0, L: 0, XL: 0, '2XL': 0, '3XL': 0 } }
   },
 
   async onShow() {
@@ -36,6 +36,33 @@ Page({
   isPositiveInt(n) { return Number.isInteger(n) && n > 0 },
   isNonNegativeInt(n) { return Number.isInteger(n) && n >= 0 },
   isValidUrl(s) { return typeof s === 'string' && /^(https?:\/\/|cloud:\/\/)/i.test(s) },
+  getFileExt(filePath, fallbackExt = 'jpg') {
+    const m = String(filePath || '').match(/\.([a-zA-Z0-9]+)(?:\?|#|$)/)
+    return (m && m[1] ? m[1] : fallbackExt).toLowerCase()
+  },
+  getFileSizeBytes(filePath) {
+    return new Promise((resolve) => {
+      wx.getFileInfo({
+        filePath,
+        success: (res) => resolve(res && typeof res.size === 'number' ? res.size : 0),
+        fail: () => resolve(0)
+      })
+    })
+  },
+  async compressImageForUpload(filePath) {
+    const originalPath = filePath
+    const size = await this.getFileSizeBytes(originalPath)
+    if (!size || size <= 900 * 1024) return originalPath
+    let quality = 75
+    if (size > 6 * 1024 * 1024) quality = 55
+    else if (size > 3 * 1024 * 1024) quality = 65
+    try {
+      const out = await wx.compressImage({ src: originalPath, quality })
+      return (out && out.tempFilePath) || originalPath
+    } catch (_) {
+      return originalPath
+    }
+  },
 
   onInputName(e){ this.setData({ 'form.name': e.detail.value.trim() }) },
   onInputPoints(e){ this.setData({ 'form.points': e.detail.value.trim() }) },
@@ -64,49 +91,83 @@ Page({
     }) 
   },
 
-  // 选择图片（新增表单）
-  chooseFormImage() {
+  chooseFormImages() {
+    const current = Array.isArray(this.data.form.images) ? this.data.form.images : []
+    const remain = Math.max(0, 7 - current.length)
+    if (remain <= 0) return app.showToast('最多上传7张图片', 'error')
     wx.chooseImage({
-      count: 1,
+      count: Math.min(remain, 7),
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
-      success: (res) => {
-        const tempFilePath = res.tempFilePaths[0];
-        this.uploadImage(tempFilePath, 'form');
+      success: async (res) => {
+        const files = res.tempFilePaths || []
+        if (!files.length) return
+        await this.uploadImages(files, 'form')
       }
-    });
+    })
   },
 
-  // 删除图片（新增表单）
-  removeFormImage() {
-    this.setData({
-      'form.image': '',
-      'form.imageUrl': ''
-    });
+  chooseEditImages() {
+    const current = Array.isArray(this.data.editForm.images) ? this.data.editForm.images : []
+    const remain = Math.max(0, 7 - current.length)
+    if (remain <= 0) return app.showToast('最多上传7张图片', 'error')
+    wx.chooseImage({
+      count: Math.min(remain, 7),
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: async (res) => {
+        const files = res.tempFilePaths || []
+        if (!files.length) return
+        await this.uploadImages(files, 'editForm')
+      }
+    })
   },
 
-  // 上传图片到云存储
-  async uploadImage(filePath, formType) {
-    wx.showLoading({ title: '上传中...' });
+  async uploadImages(filePaths, formType) {
+    wx.showLoading({ title: '上传中...' })
     try {
-      const cloudPath = `products/${Date.now()}_${Math.random().toString(36).substr(2, 8)}${filePath.match(/\.[^\.]+?$/)[0]}`;
-      const result = await wx.cloud.uploadFile({
-        cloudPath,
-        filePath
-      });
-      
+      const uploaded = []
+      for (const filePath of filePaths) {
+        const fileID = await this.uploadSingleImage(filePath)
+        if (fileID) uploaded.push(fileID)
+      }
+      if (!uploaded.length) return
+      const current = Array.isArray(this.data[formType].images) ? this.data[formType].images : []
+      const next = current.concat(uploaded).slice(0, 7)
+      const primary = next[0] || ''
       this.setData({
-        [`${formType}.image`]: result.fileID,
-        [`${formType}.imageUrl`]: result.fileID
-      });
-      
-      wx.hideLoading();
-      app.showToast('图片上传成功');
+        [`${formType}.images`]: next,
+        [`${formType}.image`]: primary,
+        [`${formType}.imageUrl`]: primary
+      })
+      app.showToast('图片上传成功')
     } catch (error) {
-      wx.hideLoading();
-      console.error('上传失败', error);
-      app.showToast('图片上传失败', 'error');
+      console.error('上传失败', error)
+      app.showToast('图片上传失败', 'error')
+    } finally {
+      wx.hideLoading()
     }
+  },
+
+  async uploadSingleImage(filePath) {
+    const uploadPath = await this.compressImageForUpload(filePath)
+    const ext = this.getFileExt(uploadPath, 'jpg')
+    const cloudPath = `products/${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${ext}`
+    const result = await wx.cloud.uploadFile({ cloudPath, filePath: uploadPath })
+    return result && result.fileID
+  },
+
+  removeFormImageAt(e) {
+    const idx = Number(e.currentTarget.dataset.index)
+    const current = Array.isArray(this.data.form.images) ? this.data.form.images : []
+    if (!Number.isFinite(idx) || idx < 0 || idx >= current.length) return
+    const next = current.slice(0, idx).concat(current.slice(idx + 1))
+    const primary = next[0] || ''
+    this.setData({
+      'form.images': next,
+      'form.image': primary,
+      'form.imageUrl': primary
+    })
   },
 
   async onRefresh(){
@@ -131,7 +192,9 @@ Page({
 
   async onCreate(){
     if (this.data.creating) return
-    const { name, points, stock, image, description } = this.data.form
+    const { name, points, stock, images, description } = this.data.form
+    const safeImages = Array.isArray(images) ? images.slice(0, 7) : []
+    const image = safeImages[0] || ''
 
     // 更严格的校验
     if (!name) return app.showToast('请填写商品名称', 'error')
@@ -144,7 +207,8 @@ Page({
     if (!this.isNonNegativeInt(s)) return app.showToast('库存需为整数且>=0', 'error')
     if (s > 100000) return app.showToast('库存过大，请<=100000', 'error')
 
-    if (image && !this.isValidUrl(image)) return app.showToast('图片地址需为 http(s) 或 cloud://', 'error')
+    if (safeImages.length > 7) return app.showToast('最多上传7张图片', 'error')
+    if (safeImages.some(u => u && !this.isValidUrl(u))) return app.showToast('图片地址需为 http(s) 或 cloud://', 'error')
     if (description && description.length > 140) return app.showToast('描述不应超过140字', 'error')
 
     this.setData({ creating: true })
@@ -155,6 +219,7 @@ Page({
         points: p,
         stock: s,
         image,
+        images: safeImages,
         description
       }
       // 尺码支持
@@ -181,7 +246,7 @@ Page({
       if (!result.success) throw new Error(result.message || '新增失败')
       app.showToast('创建成功')
       this.setData({ 
-        form: { name: '', points: '', stock: '', image: '', imageUrl: '', description: '', sizesEnabled: false, sizeStocks: { XS:0,S:0,M:0,L:0,XL:0,'2XL':0,'3XL':0 } },
+        form: { name: '', points: '', stock: '', image: '', imageUrl: '', images: [], description: '', sizesEnabled: false, sizeStocks: { XS:0,S:0,M:0,L:0,XL:0,'2XL':0,'3XL':0 } },
         showCreateForm: false
       })
       this.onRefresh()
@@ -241,6 +306,9 @@ Page({
   onOpenEdit(e){
     const item = e.currentTarget.dataset.item
     if (!item) return
+    const rawImages = Array.isArray(item.images) ? item.images : (item.image ? [item.image] : [])
+    const safeImages = rawImages.slice(0, 7).filter(Boolean)
+    const primary = safeImages[0] || item.image || ''
     this.setData({
       showEdit: true,
       editingId: item._id,
@@ -248,8 +316,9 @@ Page({
         name: item.name || '',
         points: String(item.points || ''),
         stock: String(item.stock || ''),
-        image: item.image || '',
-        imageUrl: item.image || '',
+        image: primary,
+        imageUrl: primary,
+        images: safeImages,
         description: item.description || '',
         sizesEnabled: !!item.sizesEnabled,
         sizeStocks: Object.assign({ XS: 0, S: 0, M: 0, L: 0, XL: 0, '2XL': 0, '3XL': 0 }, item.sizeStocks || {})
@@ -260,7 +329,7 @@ Page({
     this.setData({ 
       showEdit: false, 
       editingId: '',
-      editForm: { name: '', points: '', stock: '', image: '', imageUrl: '', description: '', sizesEnabled: false, sizeStocks: { XS:0, S:0, M:0, L:0, XL:0, '2XL':0, '3XL':0 } }
+      editForm: { name: '', points: '', stock: '', image: '', imageUrl: '', images: [], description: '', sizesEnabled: false, sizeStocks: { XS:0, S:0, M:0, L:0, XL:0, '2XL':0, '3XL':0 } }
     })
   },
   onEditName(e){ this.setData({ 'editForm.name': e.detail.value.trim() }) },
@@ -288,25 +357,17 @@ Page({
     }) 
   },
 
-  // 选择图片（编辑表单）
-  chooseEditImage() {
-    wx.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera'],
-      success: (res) => {
-        const tempFilePath = res.tempFilePaths[0];
-        this.uploadImage(tempFilePath, 'editForm');
-      }
-    });
-  },
-
-  // 删除图片（编辑表单）
-  removeEditImage() {
+  removeEditImageAt(e) {
+    const idx = Number(e.currentTarget.dataset.index)
+    const current = Array.isArray(this.data.editForm.images) ? this.data.editForm.images : []
+    if (!Number.isFinite(idx) || idx < 0 || idx >= current.length) return
+    const next = current.slice(0, idx).concat(current.slice(idx + 1))
+    const primary = next[0] || ''
     this.setData({
-      'editForm.image': '',
-      'editForm.imageUrl': ''
-    });
+      'editForm.images': next,
+      'editForm.image': primary,
+      'editForm.imageUrl': primary
+    })
   },
 
   // 尺码开关（新增/编辑）
@@ -319,7 +380,9 @@ Page({
 
   async onSubmitEdit(){
     if (this.data.updating) return
-    const { name, points, stock, image, description } = this.data.editForm
+    const { name, points, stock, images, description } = this.data.editForm
+    const safeImages = Array.isArray(images) ? images.slice(0, 7) : []
+    const image = safeImages[0] || ''
 
     if (!name) return app.showToast('请填写商品名称', 'error')
     if (name.length > 50) return app.showToast('名称不应超过50个字符', 'error')
@@ -331,7 +394,8 @@ Page({
     if (!this.isNonNegativeInt(s)) return app.showToast('库存需为整数且>=0', 'error')
     if (s > 100000) return app.showToast('库存过大，请<=100000', 'error')
 
-    if (image && !this.isValidUrl(image)) return app.showToast('图片地址需为 http(s) 或 cloud://', 'error')
+    if (safeImages.length > 7) return app.showToast('最多上传7张图片', 'error')
+    if (safeImages.some(u => u && !this.isValidUrl(u))) return app.showToast('图片地址需为 http(s) 或 cloud://', 'error')
     if (description && description.length > 140) return app.showToast('描述不应超过140字', 'error')
 
     this.setData({ updating: true })
@@ -343,6 +407,7 @@ Page({
         points: p,
         stock: s,
         image,
+        images: safeImages,
         description
       }
       // 尺码支持：仅在启用尺码时发送尺码字段，避免覆盖手动库存

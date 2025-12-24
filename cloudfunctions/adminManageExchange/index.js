@@ -47,7 +47,7 @@ exports.main = async (event, context) => {
         } else {
           await t.collection('products').doc(productId).update({ data: { stock: db.command.inc(qty), updateTime: db.serverDate() } })
         }
-        await t.collection('exchange_records').doc(id).update({ data: { status: 'cancelled', updateTime: db.serverDate(), cancelTime: db.serverDate() } })
+        await t.collection('exchange_records').doc(id).update({ data: { status: 'cancelled', updateTime: db.serverDate(), cancelTime: db.serverDate(), msgIsRead: false, msgReadTime: null } })
         await t.collection('point_records').add({ data: { _openid: userOpenid, type: 'refund', points: points, description: `取消兑换返还积分：${record.productName} x${qty}`, relatedId: id, submitTime: db.serverDate(), status: 'approved' } })
       })
       return { success: true }
@@ -108,30 +108,7 @@ exports.main = async (event, context) => {
       const { id, company = '', trackingNumber = '' } = data
       if (!id) throw new Error('缺少记录ID')
       
-      // 获取兑换记录信息
-      const recordRes = await coll.doc(id).get()
-      const record = recordRes.data
-      
-      await coll.doc(id).update({ data: { status: 'shipped', 'logistics.company': company, 'logistics.trackingNumber': trackingNumber, shipTime: db.serverDate(), updateTime: db.serverDate() } })
-      
-      // 发送消息通知
-      try {
-        await cloud.callFunction({
-          name: 'messageManager',
-          data: {
-            action: 'create',
-            data: {
-              targetOpenid: record._openid,
-              type: 'exchange_status',
-              title: '商品已发货',
-              content: `您兑换的商品已发货，物流公司：${company}，快递单号：${trackingNumber}`,
-              relatedId: id
-            }
-          }
-        })
-      } catch (msgError) {
-        console.error('发送消息通知失败', msgError)
-      }
+      await coll.doc(id).update({ data: { status: 'shipped', 'logistics.company': company, 'logistics.trackingNumber': trackingNumber, shipTime: db.serverDate(), updateTime: db.serverDate(), msgIsRead: false, msgReadTime: null } })
       
       return { success: true }
     }
@@ -140,30 +117,7 @@ exports.main = async (event, context) => {
       const { id } = data
       if (!id) throw new Error('缺少记录ID')
       
-      // 获取兑换记录信息
-      const recordRes = await coll.doc(id).get()
-      const record = recordRes.data
-      
-      await coll.doc(id).update({ data: { status: 'completed', finishTime: db.serverDate(), updateTime: db.serverDate() } })
-      
-      // 发送消息通知
-      try {
-        await cloud.callFunction({
-          name: 'messageManager',
-          data: {
-            action: 'create',
-            data: {
-              targetOpenid: record._openid,
-              type: 'exchange_status',
-              title: '兑换完成',
-              content: `您的商品兑换已完成，感谢您的参与！`,
-              relatedId: id
-            }
-          }
-        })
-      } catch (msgError) {
-        console.error('发送消息通知失败', msgError)
-      }
+      await coll.doc(id).update({ data: { status: 'completed', finishTime: db.serverDate(), updateTime: db.serverDate(), msgIsRead: false, msgReadTime: null } })
       
       return { success: true }
     }
@@ -172,30 +126,7 @@ exports.main = async (event, context) => {
       const { id } = data
       if (!id) throw new Error('缺少记录ID')
       
-      // 获取兑换记录信息
-      const recordRes = await coll.doc(id).get()
-      const record = recordRes.data
-      
-      await coll.doc(id).update({ data: { status: 'completed', finishTime: db.serverDate(), updateTime: db.serverDate() } })
-      
-      // 发送消息通知
-      try {
-        await cloud.callFunction({
-          name: 'messageManager',
-          data: {
-            action: 'create',
-            data: {
-              targetOpenid: record._openid,
-              type: 'exchange_status',
-              title: '兑换完成',
-              content: `您的商品兑换已完成，感谢您的参与！`,
-              relatedId: id
-            }
-          }
-        })
-      } catch (msgError) {
-        console.error('发送消息通知失败', msgError)
-      }
+      await coll.doc(id).update({ data: { status: 'completed', finishTime: db.serverDate(), updateTime: db.serverDate(), msgIsRead: false, msgReadTime: null } })
       
       return { success: true }
     }
@@ -233,16 +164,10 @@ exports.main = async (event, context) => {
         } else {
           await t.collection('products').doc(productId).update({ data: { stock: db.command.inc(qty), updateTime: db.serverDate() } })
         }
-        await t.collection('exchange_records').doc(id).update({ data: { status: 'cancelled', updateTime: db.serverDate(), cancelTime: db.serverDate() } })
+        await t.collection('exchange_records').doc(id).update({ data: { status: 'cancelled', updateTime: db.serverDate(), cancelTime: db.serverDate(), msgIsRead: false, msgReadTime: null } })
         // 增加积分返还记录
         await t.collection('point_records').add({ data: { _openid: userOpenid, type: 'refund', points: points, description: `取消兑换返还积分：${record.productName} x${qty}`, relatedId: id, submitTime: db.serverDate(), status: 'approved' } })
       })
-      // 通知用户
-      try {
-        await cloud.callFunction({ name: 'messageManager', data: { action: 'create', data: { targetOpenid: userOpenid, type: 'exchange_status', title: '兑换已取消', content: `您的“${record.productName}”兑换申请已取消，积分已返还。`, relatedId: id } } })
-      } catch (msgError) {
-        console.error('发送消息通知失败', msgError)
-      }
       return { success: true }
     }
 

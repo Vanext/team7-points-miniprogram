@@ -10,7 +10,10 @@ Page({
 
   onLoad() {
     const u = app.globalData.userInfo
-    if (!u || u.isAdmin !== true) {
+    const roles = (u && (u.roles || [])) || []
+    const role = u && (u.role || '')
+    const isAdmin = !!(u && (u.isAdmin === true || u.admin === true || u.isSuperAdmin === true || (Array.isArray(roles) && roles.includes('admin')) || role === 'admin'))
+    if (!u || !isAdmin) {
       wx.showModal({ title: '权限不足', content: '只有管理员才能访问此页面', showCancel: false, success: () => { wx.switchTab({ url: '/pages/profile/profile' }) } })
       return
     }
@@ -29,44 +32,16 @@ Page({
     this.setData({ loading: true })
     try {
       const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-            try {
-              const r = await wx.cloud.callFunction({ name: 'campApplication', config: { env: cloudEnv }, data: { action: 'list', query: { status: this.data.currentTab, limit: 50 } } })
-              const rows = (r.result && r.result.data) || []
-              const list = rows.map(it => ({ ...it, applyTimeText: this.format(it.applyTime) }))
-              this.setData({ list })
-            } catch (_err) {
-              try {
-                const db = wx.cloud.database({ env: cloudEnv })
-                const where = this.data.currentTab === 'pending' ? { status: 'pending' } : (this.data.currentTab === 'approved' ? { status: 'approved' } : { status: 'rejected' })
-                const res = await db.collection('camp_applications').where(where).orderBy('applyTime', 'desc').limit(50).get()
-                const rows = res.data || []
-                const seen = {}
-                const uniqRows = []
-                for (const it of rows) {
-                  const k = it && it._openid
-                  if (!k || seen[k]) continue
-                  seen[k] = 1
-                  uniqRows.push(it)
-                }
-                const openids = uniqRows.map(x => x._openid).filter(Boolean)
-                let userMap = {}
-                if (openids.length) {
-                  const _ = db.command
-                  const ur = await db.collection('users').where({ _openid: _.in(openids) }).get()
-                  ;(ur.data || []).forEach(u => { userMap[u._openid] = u })
-                }
-                const list = uniqRows.map(it => ({
-                  ...it,
-                  nickName: (userMap[it._openid] && (userMap[it._openid].nickName || userMap[it._openid].realName)) || '',
-                  applyTimeText: this.format(it.applyTime)
-                }))
-                this.setData({ list })
-              } catch (err2) {
-                console.error('列表加载失败(本地回退也失败):', err2)
-                this.setData({ list: [] })
-                wx.showToast({ title: '暂无申请或权限不足', icon: 'none' })
-              }
-            }
+      const r = await wx.cloud.callFunction({ name: 'campApplication', config: { env: cloudEnv }, data: { action: 'list', query: { status: this.data.currentTab, limit: 50 } } })
+      if (r.result && r.result.success) {
+        const rows = r.result.data || []
+        const list = rows.map(it => ({ ...it, applyTimeText: this.format(it.applyTime) }))
+        this.setData({ list })
+        return
+      }
+      const msg = (r && r.result && r.result.message) ? r.result.message : '加载失败'
+      console.error('训练营申请列表云函数失败:', r && r.result)
+      wx.showToast({ title: msg, icon: 'none' })
     } catch (err) {
       wx.showToast({ title: '加载失败', icon: 'none' })
       console.error(err)

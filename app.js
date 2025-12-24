@@ -1,4 +1,5 @@
 // app.js
+
 App({
   onLaunch() {
     console.log('Team 7 积分小程序启动')
@@ -61,47 +62,19 @@ App({
 
   // 获取系统信息（使用新的API）
   getSystemInfo() {
+    const info = {}
+    try { if (typeof wx.getDeviceInfo === 'function') Object.assign(info, wx.getDeviceInfo()) } catch (_) {}
+    try { if (typeof wx.getWindowInfo === 'function') Object.assign(info, wx.getWindowInfo()) } catch (_) {}
+    try { if (typeof wx.getAppBaseInfo === 'function') Object.assign(info, wx.getAppBaseInfo()) } catch (_) {}
+    try { if (typeof wx.getSystemSetting === 'function') Object.assign(info, wx.getSystemSetting()) } catch (_) {}
+    this.globalData.systemInfo = info
     try {
-      // 获取设备信息
-      const deviceInfo = wx.getDeviceInfo()
-      
-      // 获取窗口信息
-      const windowInfo = wx.getWindowInfo()
-      
-      // 获取应用基础信息
-      const appBaseInfo = wx.getAppBaseInfo()
-      
-      // 获取系统设置信息
-      const systemSetting = wx.getSystemSetting()
-      
-      // 合并所有信息
-      this.globalData.systemInfo = {
-        ...deviceInfo,
-        ...windowInfo,
-        ...appBaseInfo,
-        ...systemSetting
-      }
-      
-      console.log('系统信息获取成功:', {
-        platform: deviceInfo.platform,
-        system: deviceInfo.system,
-        version: appBaseInfo.version,
-        SDKVersion: appBaseInfo.SDKVersion
-      })
-      
-    } catch (error) {
-      console.warn('新API不支持，回退到旧API')
-      // 如果新API不支持，回退到旧API（但会有警告）
-      wx.getSystemInfo({
-        success: (res) => {
-          this.globalData.systemInfo = res
-          console.log('系统信息:', res.platform, res.version)
-        },
-        fail: (err) => {
-          console.error('获取系统信息失败:', err)
-        }
-      })
-    }
+      const p = info.platform || ''
+      const s = info.system || ''
+      const v = info.version || ''
+      const sdk = info.SDKVersion || ''
+      console.log('系统信息获取成功:', { platform: p, system: s, version: v, SDKVersion: sdk })
+    } catch (_) {}
   },
 
   // 用户登录方法（注册并以数据库为准回填资料）

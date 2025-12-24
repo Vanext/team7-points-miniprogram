@@ -12,3 +12,10 @@ $RECYCLE.BIN/
 
 # Node.js
 node_modules/
+
+# CloudBase local artifacts / backups
+.cloudbase/
+.cloudbase-backup/
+
+# Local exports (may contain sensitive user data)
+exports/

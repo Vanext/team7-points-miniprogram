@@ -5,6 +5,8 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
+const CODE_VERSION = '2025-12-21-activation'
+
 // 确保需要的集合已存在
 async function ensureCollections(names = []) {
   for (const name of names) {
@@ -37,11 +39,28 @@ exports.main = async (event, context) => {
       }
       const user = userRes.data[0]
       const userPoints = user.totalPoints || 0
-      // 会员资格与当年缴费校验
-      const now = new Date()
-      const currentYear = now.getFullYear()
-      const paidYears = Array.isArray(user.membershipPaidYears) ? user.membershipPaidYears : []
       const isOfficialMember = user.isOfficialMember === true
+      const until = user.officialMemberUntil
+      const untilTs = (() => {
+        if (!until) return 0
+        if (until instanceof Date) return until.getTime()
+        if (typeof until === 'number') return until
+        if (typeof until === 'string') {
+          const t = new Date(until).getTime()
+          return Number.isFinite(t) ? t : 0
+        }
+        if (until && typeof until === 'object') {
+          if (until.$date) {
+            const t = new Date(until.$date).getTime()
+            return Number.isFinite(t) ? t : 0
+          }
+          if (until.time) {
+            const t = new Date(until.time).getTime()
+            return Number.isFinite(t) ? t : 0
+          }
+        }
+        return 0
+      })()
 
       // 2. 获取商品信息
       const productRes = await transaction.collection('products').doc(productId).get()
@@ -66,6 +85,17 @@ exports.main = async (event, context) => {
       }
       if (userPoints < totalPoints) {
         throw new Error('积分不足，无法兑换')
+      }
+
+      if (isOfficialMember && untilTs > 0 && untilTs <= Date.now()) {
+        await transaction.collection('users').doc(user._id).update({
+          data: { isOfficialMember: false, updateTime: db.serverDate() }
+        })
+        throw new Error('正式会员已到期，请联系管理员续期')
+      }
+
+      if (!isOfficialMember) {
+        throw new Error('仅俱乐部正式会员可参与积分兑换')
       }
 
       // 检查用户是否被锁定兑换权限
@@ -93,12 +123,8 @@ exports.main = async (event, context) => {
         }
       }
 
-      // 正式会员 + 当年缴费限制
-      if (!isOfficialMember) {
-        throw new Error('仅俱乐部正式会员可参与积分兑换')
-      }
-      if (!paidYears.includes(currentYear)) {
-        throw new Error('需当年缴纳会员会费方可参与积分兑换')
+      if (user.exchange_locked === true) {
+        throw new Error('未激活：完成一次铁人三项打卡审核通过，或联系管理员解锁')
       }
 
       // 收件信息校验
@@ -194,12 +220,14 @@ exports.main = async (event, context) => {
     return {
       success: true,
       data: result,
+      codeVersion: CODE_VERSION,
       message: '兑换申请已提交'
     }
   } catch (error) {
     console.error('积分兑换失败', error)
     return {
       success: false,
+      codeVersion: CODE_VERSION,
       message: error.message || '兑换失败，请稍后重试',
       error: error
     }

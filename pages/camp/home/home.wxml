@@ -33,6 +33,9 @@
           <text class="camp-title">{{campData.name}}</text>
           <view class="countdown-bubble">{{formatCountdown(daysToTargetRace)}}</view>
         </view>
+        <view class="joined-row">
+          <text class="joined-text">已加入训练营：{{joinedCount}} 人</text>
+        </view>
         <text class="camp-desc">{{campSubtitle}}</text>
         <button class="course-btn" bindtap="navigateToCourse">赛道详情与参赛指导</button>
       </view>
@@ -45,7 +48,7 @@
     
 
     <!-- 训练计划 -->
-    <view class="training-plan-section" style="height: 1902rpx; display: block; box-sizing: border-box">
+    <view class="training-plan-section">
       <view class="section-header">
         <text class="section-title">13周训练计划</text>
         <view class="header-controls">
@@ -61,9 +64,9 @@
         </view>
       </view>
 
-      <view class="top-row" style="height: 199rpx; display: flex; box-sizing: border-box">
-        <view class="progress-overview" style="position: relative; left: -39rpx; top: 0rpx; width: 439rpx; display: block; box-sizing: border-box; height: 195rpx">
-          <view class="progress-card" style="width: 414rpx; display: flex; box-sizing: border-box; position: relative; left: -39rpx; top: 0rpx">
+      <view class="top-row">
+        <view class="progress-card-wrapper">
+          <view class="progress-card">
             <view class="progress-item">
               <text class="progress-label">完成进度</text>
               <text class="progress-value">{{userProgress.total_weeks_completed}}/{{userProgress.total_weeks}}</text>
@@ -78,7 +81,7 @@
             </view>
           </view>
         </view>
-        <view class="countdown-card" style="position: relative; left: -72rpx; top: 0rpx; width: 249rpx; display: block; box-sizing: border-box">
+        <view class="countdown-card">
           <text class="countdown-label">距离比赛</text>
           <view class="flip-container">
             <block wx:for="{{countdownDigits}}" wx:for-item="digit" wx:for-index="idx" wx:key="idx">
@@ -138,20 +141,20 @@
                 class="upload-btn {{currentWeek === userProgress.current_week ? 'primary-btn' : 'secondary-btn'}}"
                 bindtap="uploadWeekSummary"
                 data-week="{{currentWeek}}">
-                {{currentWeek === userProgress.current_week ? '周打卡' : '补交周打卡'}}
+                周训练打卡
               </button>
             </view>
           </view>
           <view wx:if="{{expandedWeeks[currentWeek] && isLocked}}" class="locked-card">
             <text class="locked-title">已锁定</text>
-            <text class="locked-desc">完成上一周打卡并通过审核后解锁下一周训练计划。</text>
+            <text class="locked-desc">完成上一周打卡后解锁下一周训练计划。</text>
           </view>
         </view>
       </view>
     </view>
   </view>
 
-  <view class="intensity-card" style="position: relative; left: 0rpx; top: -54rpx">
+  <view class="intensity-card">
     <text class="intensity-title">强度分区简述</text>
     <text class="intensity-text">Z1 恢复 · Z2 有氧基础 · Z3 节奏强化 · Z4 阈值训练 · Z5 短冲刺。按个人阈值计算更精准。</text>
     <button class="intensity-btn" bindtap="navigateToTrainingAssistant">计算个人分区</button>
@@ -160,12 +163,12 @@
   
   <!-- 教练提示（底部，无跳转） -->
   <view class="coach-note-section">
-    <view class="coach-note-card" style="position: relative; left: 0rpx; top: -52rpx; height: 183rpx; display: block; box-sizing: border-box">
-      <view class="coach-header" style="position: relative; left: -2rpx; top: -31rpx">
+    <view class="coach-note-card">
+      <view class="coach-header">
         <text class="coach-icon">👨‍🏫</text>
         <text class="coach-title">教练提示</text>
       </view>
-      <text class="coach-content" style="position: relative; left: 2rpx; top: -50rpx">{{campData.coach_note}}</text>
+      <text class="coach-content">{{campData.coach_note}}</text>
     </view>
   </view>
 </view>

@@ -31,6 +31,63 @@ exports.main = async (event, context) => {
 
     const userInfo = userResult.data[0]
 
+    const nowTs = Date.now()
+    const toTs = (v) => {
+      if (!v) return 0
+      if (v instanceof Date) return v.getTime()
+      if (typeof v === 'number') return v
+      if (typeof v === 'string') {
+        const t = new Date(v).getTime()
+        return Number.isFinite(t) ? t : 0
+      }
+      if (v && typeof v === 'object') {
+        if (v.$date) {
+          const t = new Date(v.$date).getTime()
+          return Number.isFinite(t) ? t : 0
+        }
+        if (v.time) {
+          const t = new Date(v.time).getTime()
+          return Number.isFinite(t) ? t : 0
+        }
+      }
+      return 0
+    }
+    const isExpired = (until) => {
+      const ts = toTs(until)
+      return ts > 0 && ts <= nowTs
+    }
+
+    let normalizedUser = { ...userInfo }
+    if (userInfo.isOfficialMember === true) {
+      if (isExpired(userInfo.officialMemberUntil)) {
+        await db.collection('users').doc(userInfo._id).update({
+          data: {
+            isOfficialMember: false,
+            updateTime: db.serverDate()
+          }
+        })
+        normalizedUser.isOfficialMember = false
+        normalizedUser.officialMemberUntil = null
+      } else if (!userInfo.officialMemberUntil) {
+        const oneYearMs = 365 * 24 * 60 * 60 * 1000
+        const until = new Date(Date.now() + oneYearMs)
+        const since = userInfo.officialMemberSince || userInfo.joinDate || userInfo.createTime || db.serverDate()
+        await db.collection('users').doc(userInfo._id).update({
+          data: {
+            officialMemberSince: since,
+            officialMemberUntil: until,
+            updateTime: db.serverDate()
+          }
+        })
+        normalizedUser.officialMemberSince = since
+        normalizedUser.officialMemberUntil = until
+      }
+    }
+
+    const effectiveOfficial = normalizedUser.isOfficialMember === true && !isExpired(normalizedUser.officialMemberUntil)
+    const exchangeLocked = normalizedUser.exchange_locked === true
+    const isExchangeActivated = effectiveOfficial && !exchangeLocked
+
     // 获取用户的积分记录（参赛历史）
     // 注意：集合名称是 point_records，不是 points
     const pointsResult = await db.collection('point_records').where({
@@ -77,19 +134,21 @@ exports.main = async (event, context) => {
       success: true,
       data: {
         userInfo: {
-          ...userInfo,
-          totalPoints: userInfo.totalPoints || 0,
+          ...normalizedUser,
+          totalPoints: normalizedUser.totalPoints || 0,
           pointsCount: pointsResult.data.length,
           // 添加锁定状态信息
-          exchange_locked: userInfo.exchange_locked || false,
-          lock_reason: userInfo.lock_reason || null,
-          locked_at: userInfo.locked_at || null,
-          locked_by_admin_id: userInfo.locked_by_admin_id || null,
+          exchange_locked: exchangeLocked,
+          lock_reason: normalizedUser.lock_reason || null,
+          locked_at: normalizedUser.locked_at || null,
+          locked_by_admin_id: normalizedUser.locked_by_admin_id || null,
           // 会员相关字段回传
-          isOfficialMember: userInfo.isOfficialMember || false,
-          membershipPaidYears: Array.isArray(userInfo.membershipPaidYears) ? userInfo.membershipPaidYears : [],
-          competition_participation_count: userInfo.competition_participation_count || 0,
-          last_competition_date: userInfo.last_competition_date || null
+          isOfficialMember: effectiveOfficial,
+          officialMemberSince: normalizedUser.officialMemberSince || null,
+          officialMemberUntil: normalizedUser.officialMemberUntil || null,
+          isExchangeActivated,
+          competition_participation_count: normalizedUser.competition_participation_count || 0,
+          last_competition_date: normalizedUser.last_competition_date || null
         },
         participationHistory,
         yearlyStats

@@ -42,6 +42,11 @@
       <text class="menu-text">🎁 兑换记录</text>
       <text class="arrow">></text>
     </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/messages/messages">
+      <text class="menu-text">📨 消息中心</text>
+      <view class="badge" wx:if="{{unreadMsgCount > 0}}" style="position: relative; left: 195rpx; top: 0rpx">{{unreadMsgCount}}</view>
+      <text class="arrow">></text>
+    </view>
   </view>
 
   <!-- Admin Entry (Conditional) -->
@@ -68,6 +73,14 @@
     </view>
     <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/products/products">
       <text class="menu-text">🛒 商品管理</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/apparel/apparel">
+      <text class="menu-text">👕 服装发放</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" bindtap="navigateTo" data-url="/pages/admin/camp-stats/camp-stats">
+      <text class="menu-text">🏃 训练营统计</text>
       <text class="arrow">></text>
     </view>
     </view>

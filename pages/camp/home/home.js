@@ -26,7 +26,8 @@ Page({
     heroUrl: '/images/default-image.png',
     currentWeekData: null,
     weeklyHours: 0,
-    weeklyMinutes: 0
+    weeklyMinutes: 0,
+    joinedCount: 0
   },
 
   onLoad: function (options) {
@@ -116,11 +117,27 @@ Page({
       if (result.result.success) {
         const { campPlan, userProgress, countdown } = result.result
         
+        // 双保险逻辑：如果后端返回的 current_week 已经在 completed_weeks 中，强制跳到下一周
+        let displayWeek = userProgress.current_week
+        const completedWeeks = userProgress.completed_weeks || []
+        const totalWeeks = campPlan.total_weeks || 13
+        
+        if (completedWeeks.includes(displayWeek) && displayWeek < totalWeeks) {
+          displayWeek += 1
+        }
+        
+        // 确保解锁周至少覆盖当前显示周
+        let unlockedWeek = (userProgress && userProgress.unlocked_week) ? userProgress.unlocked_week : displayWeek
+        if (unlockedWeek < displayWeek) {
+          unlockedWeek = displayWeek
+        }
+
         this.setData({
           campData: campPlan,
           userProgress: userProgress,
           countdown: countdown,
-          currentWeek: userProgress.current_week,
+          currentWeek: displayWeek,
+          unlockedWeek: unlockedWeek,
           loading: false,
           error: null
         })
@@ -145,13 +162,17 @@ Page({
             })
           }
         } catch (_) {}
-        const unlockedWeek = (userProgress && userProgress.unlocked_week) ? userProgress.unlocked_week : userProgress.current_week
         this.setData({ campSubtitle: subtitle, daysToTargetRace, countdownDigits, eventLogoUrl, heroUrl, unlockedWeek })
+        try {
+          const rc = await wx.cloud.callFunction({ name: 'campApplication', config: { env: cloudEnv }, data: { action: 'approvedCount', query: { camp_id: campPlan.camp_id } } })
+          const joinedCount = (rc && rc.result && rc.result.success) ? (rc.result.count || 0) : 0
+          this.setData({ joinedCount })
+        } catch (_) { this.setData({ joinedCount: 0 }) }
         this.updateCurrentWeekData()
 
         // 自动展开当前周
         this.setData({
-          [`expandedWeeks.${userProgress.current_week}`]: true
+          [`expandedWeeks.${displayWeek}`]: true
         })
       } else {
         this.setData({
@@ -181,14 +202,13 @@ Page({
   // 周导航
   prevWeek() {
     const min = 1
-    const max = (this.data.unlockedWeek || ((this.data.campData && this.data.campData.total_weeks) || 13))
     const w = Math.max(min, this.data.currentWeek - 1)
     this.setData({ currentWeek: w })
     this.updateCurrentWeekData()
     this.setData({ [`expandedWeeks.${w}`]: true })
   },
   nextWeek() {
-    const max = (this.data.unlockedWeek || ((this.data.campData && this.data.campData.total_weeks) || 13))
+    const max = (this.data.campData && this.data.campData.total_weeks) || 13
     const w = Math.min(max, this.data.currentWeek + 1)
     this.setData({ currentWeek: w })
     this.updateCurrentWeekData()

@@ -7,42 +7,58 @@
     </view>
   </block>
   <block wx:else>
-    <view class="list-header">
-      <view class="header-info">
-        <text class="section-title">训练营申请</text>
-        <view class="member-count-badge">{{list.length}}</view>
+    <!-- Header & Tabs -->
+    <view class="page-header">
+      <view class="header-title">
+        <text>训练营申请</text>
+        <view class="count-badge" wx:if="{{list.length > 0}}">{{list.length}}</view>
       </view>
-      <view class="sort-actions">
-        <button class="sort-btn {{currentTab==='pending'?'active':''}}" bindtap="onTabChange" data-id="pending">待审核</button>
-        <button class="sort-btn {{currentTab==='approved'?'active':''}}" bindtap="onTabChange" data-id="approved">已通过</button>
-        <button class="sort-btn {{currentTab==='rejected'?'active':''}}" bindtap="onTabChange" data-id="rejected">已拒绝</button>
+      <view class="tabs">
+        <view class="tab-item {{currentTab==='pending'?'active':''}}" bindtap="onTabChange" data-id="pending">待审核</view>
+        <view class="tab-item {{currentTab==='approved'?'active':''}}" bindtap="onTabChange" data-id="approved">已通过</view>
+        <view class="tab-item {{currentTab==='rejected'?'active':''}}" bindtap="onTabChange" data-id="rejected">已拒绝</view>
       </view>
     </view>
 
-    <view class="members-grid">
-      <block wx:for="{{list}}" wx:key="_id">
-        <view class="member-card">
-          <view class="card-header">
-            <view class="user-block">
-              <view class="name-line">
-                <text class="user-name">{{item.nickName || '微信用户'}}</text>
-                <text class="badge {{item.status}}">{{item.status === 'pending' ? '待审核' : (item.status==='approved' ? '已通过' : '已拒绝')}}</text>
+    <!-- Content List -->
+    <scroll-view scroll-y class="content-scroll">
+      <view class="list-container">
+        <block wx:for="{{list}}" wx:key="_id">
+          <view class="app-card">
+            <view class="card-main">
+              <view class="user-info">
+                <view class="name-row">
+                  <text class="user-name">{{item.nickName || '微信用户'}}</text>
+                  <view class="status-tag {{item.status}}">
+                    {{item.status === 'pending' ? '待审核' : (item.status==='approved' ? '已通过' : '已拒绝')}}
+                  </view>
+                </view>
+                <view class="time-row">
+                  <text class="label">申请时间：</text>
+                  <text class="value">{{item.applyTimeText}}</text>
+                </view>
               </view>
             </view>
-            <view class="metrics">
-              <view class="points-row">
-                <text class="points-label">申请时间</text>
-                <text class="points-value">{{item.applyTimeText}}</text>
-              </view>
+            
+            <view class="card-actions">
+              <block wx:if="{{currentTab==='pending'}}">
+                <view class="action-btn approve" data-id="{{item._id}}" bindtap="approve">通过</view>
+                <view class="action-btn reject" data-id="{{item._id}}" bindtap="reject">拒绝</view>
+              </block>
+              <block wx:if="{{currentTab==='approved'}}">
+                <view class="action-btn revoke" data-id="{{item._id}}" bindtap="cancelApproved">取消通过</view>
+              </block>
+              <block wx:if="{{currentTab==='rejected'}}">
+                <view class="action-btn disabled">已拒绝</view>
+              </block>
             </view>
           </view>
-          <view class="card-actions actions-grid">
-            <button class="action-btn admin-btn {{currentTab==='pending'?'add':'remove'}}" wx:if="{{currentTab==='pending'}}" data-id="{{item._id}}" bindtap="approve">通过</button>
-            <button class="action-btn lock-btn lock" wx:if="{{currentTab==='pending'}}" data-id="{{item._id}}" bindtap="reject">拒绝</button>
-            <button class="action-btn lock-btn remove" wx:if="{{currentTab==='approved'}}" data-id="{{item._id}}" bindtap="cancelApproved">取消通过</button>
-          </view>
+        </block>
+        
+        <view wx:if="{{list.length === 0}}" class="empty-tip">
+          <text>暂无{{currentTab === 'pending' ? '待审核' : (currentTab === 'approved' ? '已通过' : '已拒绝')}}申请</text>
         </view>
-      </block>
-    </view>
+      </view>
+    </scroll-view>
   </block>
 </view>

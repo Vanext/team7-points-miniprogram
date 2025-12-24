@@ -18,6 +18,32 @@ async function assertAdmin(openId) {
   return u
 }
 
+function toTs(v) {
+  if (!v) return 0
+  if (v instanceof Date) return v.getTime()
+  if (typeof v === 'number') return v
+  if (typeof v === 'string') {
+    const t = new Date(v).getTime()
+    return Number.isFinite(t) ? t : 0
+  }
+  if (v && typeof v === 'object') {
+    if (v.$date) {
+      const t = new Date(v.$date).getTime()
+      return Number.isFinite(t) ? t : 0
+    }
+    if (v.time) {
+      const t = new Date(v.time).getTime()
+      return Number.isFinite(t) ? t : 0
+    }
+  }
+  return 0
+}
+
+function isExpired(until) {
+  const ts = toTs(until)
+  return ts > 0 && ts <= Date.now()
+}
+
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
   const { action, data = {} } = event || {}
@@ -39,36 +65,23 @@ exports.main = async (event, context) => {
         return { success: true, unlocked: false, reason: '用户未锁定或不存在' }
       }
 
-      // 获取当前年份
-      const now = new Date()
-      const currentYear = now.getFullYear()
-      const yearStart = new Date(currentYear, 0, 1)
-      const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999)
-      
-      console.log(`检查用户 ${userId} 在 ${currentYear} 年的比赛参与情况，时间范围：${yearStart.toISOString()} - ${yearEnd.toISOString()}`)
-      
-      let hasTriathlonCompetitionThisYear = false
-      // 当年缴费与正式会员校验（兼容数字/字符串年份）
-      const isOfficialMember = user.isOfficialMember === true
-      const paidYearsRaw = Array.isArray(user.membershipPaidYears) ? user.membershipPaidYears : []
-      const paidYearsNormalized = paidYearsRaw
-        .map(y => (typeof y === 'string' ? parseInt(y, 10) : y))
-        .filter(y => Number.isFinite(y))
-      const hasPaidThisYear = paidYearsNormalized.includes(currentYear) || paidYearsRaw.includes(String(currentYear))
+      if (user.isOfficialMember === true && isExpired(user.officialMemberUntil)) {
+        await db.collection('users').doc(userId).update({
+          data: {
+            isOfficialMember: false,
+            updateTime: db.serverDate()
+          }
+        })
+        return { success: true, unlocked: false, reason: '正式会员已到期，自动取消会员资格' }
+      }
 
-      console.log('Membership debug', {
-        isOfficialMember,
-        membershipPaidYears: user.membershipPaidYears,
-        paidYearsNormalized,
-        hasPaidThisYear,
-        currentYear
-      })
+      let hasTriathlonCompetition = false
+      const isOfficialMember = user.isOfficialMember === true
       
-      // 改为检查 point_records 集合，匹配当年、通过审核的铁人三项相关记录
+      // 检查 point_records 集合，匹配已通过审核的铁人三项相关记录（任意年份，命中一次即可激活）
       const pointsRes = await db.collection('point_records')
         .where({
           _openid: user._openid,
-          submitTime: db.command.gte(yearStart).and(db.command.lte(yearEnd)),
           status: 'approved',
           points: db.command.gt(0),
           $or: [
@@ -113,38 +126,19 @@ exports.main = async (event, context) => {
             { raceType: db.command.in(['ironman', 'half_ironman', 'standard', 'half_standard', 'youth_sprint']) }
           ]
         })
+        .limit(1)
+        .field({ _id: true })
         .get()
-      
-      console.log(`在 point_records 中找到 ${pointsRes.data.length} 条铁人三项相关积分记录`)
-      if (pointsRes.data.length > 0) {
-        const matches = pointsRes.data.map(r => ({
-          categoryName: r.categoryName,
-          raceTypeLabel: r.raceTypeLabel,
-          raceType: r.raceType,
-          description: r.description,
-          submitTime: r.submitTime,
-          points: r.points
-        }))
-        console.log('Triathlon points records debug:', matches)
-      }
-      
-      if (pointsRes.data.length > 0) {
-        hasTriathlonCompetitionThisYear = true
-        const competitionDetails = pointsRes.data.map(record => ({
-          categoryName: record.categoryName,
-          points: record.points,
-          submitTime: record.submitTime,
-          description: record.description || ''
-        }))
-        console.log('铁人三项比赛详情：', competitionDetails)
+
+      if ((pointsRes.data || []).length > 0) {
+        hasTriathlonCompetition = true
       }
       
       // 备用：检查 competition_records 集合
-      if (!hasTriathlonCompetitionThisYear) {
+      if (!hasTriathlonCompetition) {
         const competitionQuery = await db.collection('competition_records')
           .where({
             userId: userId,
-            competitionDate: db.command.gte(yearStart).and(db.command.lte(yearEnd)),
             status: 'completed',
             $or: [
               { competitionType: db.RegExp({ regexp: '铁人三项', options: 'i' }) },
@@ -152,15 +146,16 @@ exports.main = async (event, context) => {
               { competitionType: db.RegExp({ regexp: 'triathlon', options: 'i' }) }
             ]
           })
+          .limit(1)
+          .field({ _id: true })
           .get()
         
         if (competitionQuery.data.length > 0) {
-          hasTriathlonCompetitionThisYear = true
-          console.log(`在 competition_records 中找到 ${competitionQuery.data.length} 条铁人三项比赛记录`)
+          hasTriathlonCompetition = true
         }
       }
  
-      if (hasTriathlonCompetitionThisYear && isOfficialMember && hasPaidThisYear) {
+      if (hasTriathlonCompetition && isOfficialMember) {
         await db.collection('users').doc(userId).update({
           data: {
             exchange_locked: false,
@@ -177,23 +172,19 @@ exports.main = async (event, context) => {
           data: {
             user_id: userId,
             action: 'unlock',
-            reason: `用户参加${currentYear}年铁人三项比赛，自动解锁`,
+            reason: '用户已完成铁人三项打卡（审核通过），自动解锁',
             performed_by_admin_id: 'system',
             created_at: db.serverDate(),
-            competition_year: currentYear
+            competition_year: ''
           }
         })
-        
-        console.log(`用户 ${userId} 已自动解锁：参加了${currentYear}年铁人三项比赛`)
-        return { success: true, unlocked: true, reason: `正式会员且当年缴费并参加${currentYear}年铁人三项，自动解锁` }
+
+        return { success: true, unlocked: true, reason: '正式会员完成铁人三项打卡后自动解锁' }
       }
 
       const reason = !isOfficialMember
         ? '非正式会员，无法自动解锁'
-        : (!hasPaidThisYear
-          ? `当年未缴费，无法自动解锁`
-          : `用户未参加${currentYear}年铁人三项比赛`)
-      console.log(`用户 ${userId} 自动解锁失败：${reason}`)
+        : '用户尚未完成铁人三项打卡（审核通过）'
       return { success: true, unlocked: false, reason }
     }
 
@@ -263,6 +254,20 @@ exports.main = async (event, context) => {
       if (!userRes.data) throw new Error('用户不存在')
       
       const user = userRes.data
+
+      if (user.isOfficialMember === true && isExpired(user.officialMemberUntil)) {
+        await db.collection('users').doc(userId).update({
+          data: {
+            isOfficialMember: false,
+            updateTime: db.serverDate()
+          }
+        })
+        throw new Error('正式会员已到期，请先重新设为正式会员')
+      }
+
+      if (user.isOfficialMember !== true) {
+        throw new Error('需先设为正式会员才可解锁兑换权限')
+      }
       
       // 如果用户未被锁定，直接返回
       if (!user.exchange_locked) {

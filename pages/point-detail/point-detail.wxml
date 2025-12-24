@@ -1,27 +1,30 @@
 <!--pages/point-detail/point-detail.wxml-->
 <view class="container">
-  <view wx:if="{{loading && records.length === 0}}" class="loading-container">
-    <view class="loading-spinner"></view>
+  <view wx:if="{{loading && records.length === 0}}" class="loading-state">
     <text>加载中...</text>
   </view>
 
-  <view wx:if="{{isEmpty}}" class="empty-container">
-    <!-- <image class="empty-icon" src="/images/empty-icon.png"></image> -->
-    <text class="empty-text">暂无积分记录</text>
-  </view>
-
-  <scroll-view wx:else scroll-y="true" class="record-list" bindscrolltolower="loadMore" lower-threshold="100">
-    <view wx:for="{{records}}" wx:key="_id" class="record-item">
-      <view class="record-info">
-        <text class="record-reason">{{item.reason}}</text>
-        <text class="record-time">{{item.formattedSubmitTime}}</text>
+  <scroll-view wx:else scroll-y class="record-scroll" enable-flex>
+    <view class="record-list">
+      <block wx:for="{{records}}" wx:key="_id">
+        <view class="record-card">
+          <view class="record-main">
+            <text class="record-reason">{{item.displayReason}}</text>
+            <text class="record-time">{{item.formattedSubmitTime}}</text>
+          </view>
+          <view class="record-amount {{item.points > 0 ? 'plus' : 'minus'}}">
+            {{item.points > 0 ? '+' : ''}}{{item.points}}
+          </view>
+        </view>
+      </block>
+      
+      <view wx:if="{{isEmpty}}" class="empty-state">
+        <text>暂无积分记录</text>
       </view>
-      <view class="record-points {{item.points > 0 ? 'points-gain' : 'points-loss'}}">
-        {{item.points > 0 ? '+' : ''}}{{item.points}}
+      
+       <view class="list-footer" wx:if="{{records.length > 0}}">
+         <text class="no-more">—— 仅展示最近记录 ——</text>
       </view>
-    </view>
-    <view wx:if="{{loading}}" class="loading-more">
-      <text>加载中...</text>
     </view>
   </scroll-view>
 </view>

@@ -26,6 +26,19 @@ async function checkAdmin() {
   return ures.data[0]
 }
 
+function normalizeImagesField(images, image) {
+  const list = Array.isArray(images) ? images : []
+  const cleaned = list.filter(u => typeof u === 'string' && u).slice(0, 7)
+  if (cleaned.length) return cleaned
+  if (typeof image === 'string' && image) return [image]
+  return []
+}
+
+function assertImageUrl(url) {
+  if (typeof url !== 'string') throw new Error('图片地址不合法')
+  if (url && !/^(https?:\/\/|cloud:\/\/|\/)/i.test(url)) throw new Error('图片地址不合法')
+}
+
 exports.main = async (event, context) => {
   await ensureCollections()
   const { action } = event || {}
@@ -69,13 +82,18 @@ async function listProducts(event) {
 }
 
 async function createProduct(event) {
-  const { name, points, stock, image, description = '', sizesEnabled = false, sizes = [], sizeStocks = {} } = event
+  const { name, points, stock, image, images, description = '', sizesEnabled = false, sizes = [], sizeStocks = {} } = event
   // 严格校验
   if (!name || typeof name !== 'string' || name.length > 50) throw new Error('名称不合法')
   if (!Number.isInteger(points) || points <= 0 || points > 1000000) throw new Error('积分不合法')
   if (!Number.isInteger(stock) || stock < 0 || stock > 100000) throw new Error('库存不合法')
   if (typeof description === 'string' && description.length > 140) throw new Error('描述过长')
-  if (image && typeof image === 'string' && !/^(https?:\/\/|cloud:\/\/)/i.test(image)) throw new Error('图片地址不合法')
+  if (typeof image !== 'undefined') assertImageUrl(image)
+  if (typeof images !== 'undefined') {
+    if (!Array.isArray(images)) throw new Error('图片列表不合法')
+    if (images.length > 7) throw new Error('最多上传7张图片')
+    images.forEach(assertImageUrl)
+  }
 
   // 处理尺码库存聚合
   let totalStock = Number.isInteger(stock) ? stock : 0
@@ -92,11 +110,13 @@ async function createProduct(event) {
     totalStock = sS.XS + sS.S + sS.M + sS.L + sS.XL + sS['2XL'] + sS['3XL']
   }
 
+  const normalizedImages = normalizeImagesField(images, image)
   const data = {
     name,
     points,
     stock: totalStock,
-    image: image || '',
+    image: normalizedImages[0] || (image || ''),
+    images: normalizedImages,
     description,
     isActive: true,
     sizesEnabled: !!sizesEnabled,
@@ -132,7 +152,7 @@ async function toggleActive(event) {
 }
 
 async function updateProduct(event) {
-  const { id, name, points, stock, image, description, sizesEnabled, sizes, sizeStocks } = event
+  const { id, name, points, stock, image, images, description, sizesEnabled, sizes, sizeStocks } = event
   if (!id) throw new Error('缺少商品ID')
   const data = { updateTime: new Date() }
   if (typeof name !== 'undefined') {
@@ -148,8 +168,16 @@ async function updateProduct(event) {
     data.stock = stock
   }
   if (typeof image !== 'undefined') {
-    if (typeof image !== 'string' || (image && !/^(https?:\/\/|cloud:\/\/)/i.test(image))) throw new Error('图片地址不合法')
+    assertImageUrl(image)
     data.image = image
+  }
+  if (typeof images !== 'undefined') {
+    if (!Array.isArray(images)) throw new Error('图片列表不合法')
+    if (images.length > 7) throw new Error('最多上传7张图片')
+    images.forEach(assertImageUrl)
+    const normalizedImages = normalizeImagesField(images, '')
+    data.images = normalizedImages
+    data.image = normalizedImages[0] || ''
   }
   if (typeof description !== 'undefined') {
     if (typeof description !== 'string' || description.length > 140) throw new Error('描述不合法')

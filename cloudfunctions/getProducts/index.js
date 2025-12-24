@@ -29,6 +29,7 @@ exports.main = async (event, context) => {
         _id: true,
         name: true,
         image: true,
+        images: true,
         points: true,
         stock: true,
         category: true,
@@ -54,6 +55,7 @@ exports.main = async (event, context) => {
           _id: true,
           name: true,
           image: true,
+          images: true,
           points: true,
           stock: true,
           category: true,
@@ -69,19 +71,31 @@ exports.main = async (event, context) => {
         .limit(Math.min(limit, 50))
         .get()
       
+      const normalized = (retryResult.data || []).map(p => {
+        const images = Array.isArray(p.images) ? p.images.filter(Boolean).slice(0, 7) : []
+        const image = typeof p.image === 'string' ? p.image : ''
+        const nextImages = images.length ? images : (image ? [image] : [])
+        return { ...p, images: nextImages, image: nextImages[0] || image }
+      })
       return {
         success: true,
-        data: retryResult.data,
-        total: retryResult.data.length,
-        hasMore: retryResult.data.length === limit
+        data: normalized,
+        total: normalized.length,
+        hasMore: normalized.length === limit
       }
     }
 
+    const normalized = (result.data || []).map(p => {
+      const images = Array.isArray(p.images) ? p.images.filter(Boolean).slice(0, 7) : []
+      const image = typeof p.image === 'string' ? p.image : ''
+      const nextImages = images.length ? images : (image ? [image] : [])
+      return { ...p, images: nextImages, image: nextImages[0] || image }
+    })
     return {
       success: true,
-      data: result.data,
-      total: result.data.length,
-      hasMore: result.data.length === limit
+      data: normalized,
+      total: normalized.length,
+      hasMore: normalized.length === limit
     }
   } catch (error) {
     console.error('获取商品失败:', error)
@@ -100,6 +114,7 @@ async function insertDefaultProducts() {
       {
         name: '精美笔记本',
         image: 'cloud://cloudbase-0gvjuqae479205e8.636c-cloudbase-0gvjuqae479205e8-1377814389/products/notebook.jpg',
+        images: ['cloud://cloudbase-0gvjuqae479205e8.636c-cloudbase-0gvjuqae479205e8-1377814389/products/notebook.jpg'],
         points: 100,
         stock: 50,
         category: 'stationery',
@@ -110,6 +125,7 @@ async function insertDefaultProducts() {
       {
         name: '保温水杯',
         image: 'cloud://cloudbase-0gvjuqae479205e8.636c-cloudbase-0gvjuqae479205e8-1377814389/products/cup.jpg',
+        images: ['cloud://cloudbase-0gvjuqae479205e8.636c-cloudbase-0gvjuqae479205e8-1377814389/products/cup.jpg'],
         points: 200,
         stock: 30,
         category: 'daily',
@@ -120,6 +136,7 @@ async function insertDefaultProducts() {
       {
         name: '蓝牙耳机',
         image: 'cloud://cloudbase-0gvjuqae479205e8.636c-cloudbase-0gvjuqae479205e8-1377814389/products/earphone.jpg',
+        images: ['cloud://cloudbase-0gvjuqae479205e8.636c-cloudbase-0gvjuqae479205e8-1377814389/products/earphone.jpg'],
         points: 500,
         stock: 20,
         category: 'electronics',
@@ -130,6 +147,7 @@ async function insertDefaultProducts() {
       {
         name: '运动手环',
         image: 'cloud://cloudbase-0gvjuqae479205e8.636c-cloudbase-0gvjuqae479205e8-1377814389/products/band.jpg',
+        images: ['cloud://cloudbase-0gvjuqae479205e8.636c-cloudbase-0gvjuqae479205e8-1377814389/products/band.jpg'],
         points: 800,
         stock: 15,
         category: 'electronics',

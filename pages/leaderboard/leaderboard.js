@@ -1,19 +1,53 @@
 const app = getApp()
 
+const CACHE_VERSION = 1
+const CACHE_TTL_SEASON_MS = 60 * 1000
+const CACHE_TTL_MONTH_MS = 3 * 60 * 1000
+
+function cacheKey(tab, month) {
+  const m = month ? String(month) : ''
+  return `leaderboard_cache_v${CACHE_VERSION}:${String(tab)}:${m}`
+}
+
+function readCache(key, ttlMs) {
+  try {
+    const v = wx.getStorageSync(key)
+    if (!v || typeof v !== 'object') return null
+    const ts = v.ts
+    if (!ts || (Date.now() - ts) > ttlMs) return null
+    return v.data || null
+  } catch (_) {
+    return null
+  }
+}
+
+function writeCache(key, data) {
+  try {
+    wx.setStorageSync(key, { ts: Date.now(), data })
+  } catch (_) {}
+}
+
 Page({
   data: {
-    currentTab: 'month',
+    currentTab: 'season',
     top3: [],
     rankList: [],
     myRank: null,
-    loading: true
+    loading: true,
+    selectedMonth: '',
+    fallbackUsed: false,
+    fallbackTipMonth: ''
   },
 
   onLoad() {
+    const now = new Date()
+    const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+    this.setData({ selectedMonth: monthStr })
     this.loadLeaderboard()
   },
 
   onShow() {
+    if (this.data.loading !== true && this.data.top3 && this.data.top3.length) return
     this.loadLeaderboard()
   },
 
@@ -23,86 +57,161 @@ Page({
     
     this.setData({ 
       currentTab: tab,
-      loading: true
+      loading: true,
+      fallbackUsed: false,
+      fallbackTipMonth: ''
     })
     
     this.loadLeaderboard()
   },
 
+  onMonthChange(e) {
+    const val = e.detail && e.detail.value
+    if (!val) return
+    this.setData({ selectedMonth: val, fallbackUsed: false, fallbackTipMonth: '' })
+    this.loadLeaderboard()
+  },
+
   async loadLeaderboard() {
+    const tab = this.data.currentTab
+    const monthStr = this.data.selectedMonth
+    const inflightKey = `${tab}:${monthStr || ''}`
+    if (this._inflightKey === inflightKey && this._inflightPromise) return this._inflightPromise
+    this._inflightKey = inflightKey
     try {
       this.setData({ loading: true })
       const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8';
-      const tab = this.data.currentTab
       if (tab === 'month') {
-        await this.loadMonthlyTrainingLeaderboard(cloudEnv)
+        const key = cacheKey(tab, monthStr)
+        const cached = readCache(key, CACHE_TTL_MONTH_MS)
+        if (cached) {
+          this.applyMonthlyLeaderboardData(cached)
+          this.setData({ loading: false })
+          return
+        }
+        this._inflightPromise = this.loadMonthlyTrainingLeaderboard(cloudEnv)
+        await this._inflightPromise
         return
       }
-      const res = await wx.cloud.callFunction({
-        name: 'getLeaderboard',
-        config: { env: cloudEnv },
-        data: { limit: 50, offset: 0 }
-      })
-      if (res.result && res.result.success) {
-        const list = res.result.data
-        const mapped = list.map(u => ({ ...u, points: Number(u.totalPoints || 0) }))
-        const top3 = mapped.slice(0, 3)
-        const rankList = mapped.slice(3)
-        let openid = (app.globalData.userInfo && app.globalData.userInfo._openid) || ''
-        if (!openid) {
-          try {
-            const { result: loginRes } = await wx.cloud.callFunction({ name: 'login', config: { env: cloudEnv } })
-            openid = loginRes.openid
-          } catch (_) {}
-        }
-        let myRank = null
-        if (openid) myRank = mapped.find(u => u._openid === openid || u.openid === openid)
-        if (!myRank) myRank = { rank: '-', nickName: '我', points: 0, avatarUrl: '' }
-        this.setData({ top3, rankList, myRank, loading: false })
-      } else {
-        throw new Error('getLeaderboard failed')
+      const key = cacheKey(tab, '')
+      const cached = readCache(key, CACHE_TTL_SEASON_MS)
+      if (cached && Array.isArray(cached.list)) {
+        const openid = (app.globalData.userInfo && app.globalData.userInfo._openid) || ''
+        this.applySeasonLeaderboardList(cached.list, openid)
+        this.setData({ loading: false })
+        return
       }
-    } catch (err) {
-      this.setData({ loading: false })
-      wx.showToast({ title: '加载排行失败', icon: 'none' })
+      const p = this.loadSeasonLeaderboard(cloudEnv)
+      this._inflightPromise = p
+      await p
+      return
+    } finally {
+      this._inflightPromise = null
+      this._inflightKey = ''
     }
   },
 
-  async loadMonthlyTrainingLeaderboard(cloudEnv) {
-    try {
-      const now = new Date()
-      const monthStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
-      const res = await wx.cloud.callFunction({
-        name: 'getTrainingLeaderboard',
-        config: { env: cloudEnv },
-        data: { limit: 50, month: monthStr }
-      })
-      if (!res.result || !res.result.success) throw new Error('cloudfn failed')
-      const rows = (res.result.data.leaderboard || []).map((r, idx) => ({
+  async loadSeasonLeaderboard(cloudEnv) {
+    const res = await wx.cloud.callFunction({
+      name: 'getLeaderboard',
+      config: { env: cloudEnv },
+      data: { limit: 50, offset: 0 }
+    })
+    if (res.result && res.result.success) {
+      const list = res.result.data
+      let openid = (app.globalData.userInfo && app.globalData.userInfo._openid) || ''
+      if (!openid) {
+        try {
+          const { result: loginRes } = await wx.cloud.callFunction({ name: 'login', config: { env: cloudEnv } })
+          openid = loginRes.openid
+        } catch (_) {}
+      }
+      this.applySeasonLeaderboardList(list, openid)
+      writeCache(cacheKey('season', ''), { list })
+    } else {
+      throw new Error('getLeaderboard failed')
+    }
+  },
+
+  applySeasonLeaderboardList(list, openid) {
+    const mapped = (Array.isArray(list) ? list : []).map(u => ({ ...u, points: Number(u.totalPoints || 0) }))
+    const top3 = mapped.slice(0, 3)
+    const rankList = mapped.slice(3)
+    let myRank = null
+    if (openid) myRank = mapped.find(u => u._openid === openid || u.openid === openid)
+    if (!myRank) myRank = { rank: '-', nickName: '我', points: 0, avatarUrl: '' }
+    this.setData({ top3, rankList, myRank, loading: false })
+  },
+
+  applyMonthlyLeaderboardData(data) {
+    const monthStr = this.data.selectedMonth
+    let rows = (data.leaderboard || []).map((r, idx) => ({
+      rank: r.rank || (idx + 1),
+      userId: r.userId || '',
+      nickName: r.nickname || '微信用户',
+      avatarUrl: r.avatarUrl || '/images/default-avatar.png',
+      points: `${Math.round(r.totalTrainingHours || 0)}h`
+    }))
+    if (rows.length === 0 && data.fallback && data.fallback.month && Array.isArray(data.fallback.leaderboard)) {
+      rows = data.fallback.leaderboard.map((r, idx) => ({
         rank: r.rank || (idx + 1),
         userId: r.userId || '',
         nickName: r.nickname || '微信用户',
         avatarUrl: r.avatarUrl || '/images/default-avatar.png',
         points: `${Math.round(r.totalTrainingHours || 0)}h`
       }))
-      const top3 = rows.slice(0,3)
-      const rankList = rows.slice(3)
-      let myRank = null
-      const me = res.result.data.currentUserRank
-      if (me && typeof me === 'object') {
-        myRank = {
-          rank: me.rank || '-',
-          nickName: me.nickname || '我',
-          avatarUrl: me.avatarUrl || '/images/default-avatar.png',
-          points: `${Math.round(me.totalTrainingHours || 0)}h`
-        }
-      }
-      if (!myRank) myRank = { rank: '-', nickName: '我', points: '0h', avatarUrl: '' }
-      this.setData({ top3, rankList, myRank, loading: false })
-    } catch (e) {
-      this.setData({ loading: false })
-      wx.showToast({ title: '加载本月排行失败', icon: 'none' })
+      this.setData({ fallbackUsed: true, fallbackTipMonth: data.fallback.month })
+    } else {
+      this.setData({ fallbackUsed: false, fallbackTipMonth: '' })
     }
+    const top3 = rows.slice(0, 3)
+    const rankList = rows.slice(3)
+    let myRank = null
+    const me = data.currentUserRank
+    if (me && typeof me === 'object') {
+      myRank = {
+        rank: me.rank || '-',
+        nickName: me.nickname || '我',
+        avatarUrl: me.avatarUrl || '/images/default-avatar.png',
+        points: `${Math.round(me.totalTrainingHours || 0)}h`
+      }
+    }
+    if (!myRank) myRank = { rank: '-', nickName: '我', points: '0h', avatarUrl: '' }
+    this.setData({ top3, rankList, myRank, loading: false, selectedMonth: monthStr })
+  },
+
+  async ensureOpenid(cloudEnv) {
+    let openid = (app.globalData.userInfo && app.globalData.userInfo._openid) || ''
+    if (openid) return openid
+    try {
+      const { result: loginRes } = await wx.cloud.callFunction({ name: 'login', config: { env: cloudEnv } })
+      return loginRes.openid
+    } catch (_) {
+      return ''
+    }
+  },
+
+  async loadMonthlyTrainingLeaderboard(cloudEnv) {
+    const monthStr = this.data.selectedMonth
+    const res = await wx.cloud.callFunction({
+      name: 'getTrainingLeaderboard',
+      config: { env: cloudEnv },
+      data: { limit: 50, month: monthStr }
+    })
+    if (!res.result || !res.result.success) throw new Error('cloudfn failed')
+    let payload = res.result.data || {}
+    if ((payload.leaderboard || []).length === 0) {
+      const [y, m] = monthStr.split('-').map(v => parseInt(v, 10))
+      const prev = new Date(y, m - 2, 1)
+      const prevStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`
+      const res2 = await wx.cloud.callFunction({ name: 'getTrainingLeaderboard', config: { env: cloudEnv }, data: { limit: 50, month: prevStr } })
+      if (res2.result && res2.result.success) {
+        const p2 = res2.result.data || {}
+        payload = { ...payload, fallback: { month: prevStr, leaderboard: p2.leaderboard || [] } }
+      }
+    }
+    this.applyMonthlyLeaderboardData(payload)
+    writeCache(cacheKey('month', monthStr), payload)
   },
 
   getMockData(type) {

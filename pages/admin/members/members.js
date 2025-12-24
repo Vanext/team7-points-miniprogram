@@ -6,25 +6,78 @@ Page({
     hasAccess: false,
     isAdmin: false,
     keyword: '',
-    members: [],
-    list: [],
+    fullList: [], // 所有已加载的数据
+    members: [], // 废弃，保留兼容
+    list: [], // 当前渲染的数据
     loading: false,
     hasMore: true,
     noMore: false,
     page: 1,
-    pageSize: 25,
+    pageSize: 50,
     skip: 0,
-    limit: 25,
+    limit: 50,
     selectedMember: null,
     newPoints: '',
-    newPointsMap: {},
-    deltaMap: {},
-    sortBy: 'points',
-    chunkSize: 12,
+    newPointsMap: {}, // 存储每个用户的积分输入
+    deltaMap: {}, // 废弃，保留兼容
+    sortBy: 'points', // 'points' | 'name'
+    chunkSize: 20,
     sortDebounceMs: 150,
     searchDebounceMs: 250,
     totalCount: 0,
-    officialCount: 0
+    officialCount: 0,
+    memberModalVisible: false,
+    memberModalUser: {},
+    memberModalExpiryDate: ''
+  },
+
+  _toTs(v) {
+    if (!v) return 0
+    if (v instanceof Date) return v.getTime()
+    if (typeof v === 'number') return v
+    if (typeof v === 'string') {
+      const t = new Date(v).getTime()
+      return Number.isFinite(t) ? t : 0
+    }
+    if (v && typeof v === 'object') {
+      if (v.$date) {
+        const t = new Date(v.$date).getTime()
+        return Number.isFinite(t) ? t : 0
+      }
+      if (v.time) {
+        const t = new Date(v.time).getTime()
+        return Number.isFinite(t) ? t : 0
+      }
+    }
+    return 0
+  },
+
+  _formatUntil(ts) {
+    if (!ts) return ''
+    const d = new Date(ts)
+    if (!Number.isFinite(d.getTime())) return ''
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  },
+
+  _normalizeUserForList(user) {
+    const untilTs = this._toTs(user.officialMemberUntil)
+    const isOfficialMember = user.isOfficialMember === true
+    const isOfficialValid = isOfficialMember && (untilTs === 0 || untilTs > Date.now())
+    const exchangeLocked = user.exchange_locked === true
+    const isExchangeActivated = user.isExchangeActivated === true || (user.isExchangeActivated == null && isOfficialValid && !exchangeLocked)
+
+    return {
+      ...user,
+      totalPoints: Number(user.totalPoints || 0),
+      isAdmin: user.isAdmin === true,
+      isOfficialMember: isOfficialValid,
+      exchange_locked: exchangeLocked,
+      officialMemberUntilText: isOfficialValid ? this._formatUntil(untilTs) : '',
+      isExchangeActivated: Boolean(isExchangeActivated)
+    }
   },
 
   onShow() {
@@ -40,8 +93,78 @@ Page({
       isAdmin: true,
       hasAccess: true 
     })
+    // 如果列表为空，初始化加载
     if (this.data.list.length === 0) this.fetch(true)
     this.updateCounts()
+  },
+
+  noop() {},
+
+  onOpenMemberModal(e) {
+    const id = e.currentTarget.dataset.id
+    const user = this.data.fullList.find(it => it && it._id === id) || this.data.list.find(it => it && it._id === id) || null
+    if (!user) return
+    const expiryDate = user.isOfficialMember ? this._formatUntil(this._toTs(user.officialMemberUntil)) : ''
+    this.setData({
+      memberModalVisible: true,
+      memberModalUser: user,
+      memberModalExpiryDate: expiryDate
+    })
+  },
+
+  onCloseMemberModal() {
+    this.setData({
+      memberModalVisible: false,
+      memberModalUser: {},
+      memberModalExpiryDate: ''
+    })
+  },
+
+  onMemberExpiryChange(e) {
+    const v = (e && e.detail && e.detail.value) || ''
+    this.setData({ memberModalExpiryDate: v })
+  },
+
+  async onSaveMemberExpiry() {
+    const user = this.data.memberModalUser
+    const expiryDate = this.data.memberModalExpiryDate
+    if (!user || !user._id || !expiryDate) return
+    try {
+      wx.showLoading({ title: '保存中...' })
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const r = await wx.cloud.callFunction({
+        name: 'adminManageMembers',
+        config: { env: cloudEnv },
+        data: {
+          action: 'setMembership',
+          data: { id: user._id, isOfficialMember: true, officialMemberUntil: expiryDate }
+        }
+      })
+
+      if (!r.result || !r.result.success) throw new Error(r.result?.message || '保存失败')
+
+      const d = (r.result && r.result.data) || {}
+      const nextUntil = d.officialMemberUntil
+      const nextLocked = typeof d.exchange_locked === 'boolean' ? d.exchange_locked : (user.exchange_locked !== false)
+      const nextOfficial = d.isOfficialMember === true
+
+      this.updateLocalList(user._id, {
+        isOfficialMember: nextOfficial,
+        officialMemberUntil: nextUntil,
+        officialMemberUntilText: nextOfficial ? this._formatUntil(this._toTs(nextUntil)) : '',
+        exchange_locked: nextLocked,
+        isExchangeActivated: nextOfficial && !nextLocked
+      })
+
+      wx.showToast({ title: '保存成功', icon: 'success' })
+      this.onCloseMemberModal()
+      this.updateCounts()
+    } catch (e) {
+      console.error('保存到期日期失败', e)
+      wx.showToast({ title: e.message || '保存失败', icon: 'none' })
+    } finally {
+      wx.hideLoading()
+    }
   },
 
   onKeyword(e) {
@@ -54,16 +177,35 @@ Page({
     this.fetch(true)
   },
 
+  // 核心拉取函数：支持分页和排序
   async fetch(reset = false) {
     if (this.data.loading) return
     this.setData({ loading: true })
     try {
       const skip = reset ? 0 : this.data.skip
       const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      
+      // 根据 sortBy 决定排序参数
+      let sortField = 'totalPoints'
+      let sortOrder = 'desc'
+      if (this.data.sortBy === 'name') {
+        sortField = 'nickName'
+        sortOrder = 'asc'
+      }
+      
       const res = await wx.cloud.callFunction({
         name: 'adminManageMembers',
         config: { env: cloudEnv },
-        data: { action: 'list', query: { keyword: this.data.keyword, skip, limit: this.data.limit } }
+        data: { 
+          action: 'list', 
+          query: { 
+            keyword: this.data.keyword, 
+            skip, 
+            limit: this.data.limit,
+            sortField,
+            sortOrder
+          } 
+        }
       })
       
       if (!res.result || res.result.success !== true) {
@@ -71,32 +213,26 @@ Page({
       }
       
       const arr = res.result.data || []
+
+      const processedArr = arr.map(user => this._normalizeUserForList(user))
       
-      // 调试日志：检查返回的用户数据结构
-      console.log('云函数返回的用户数据:', arr)
-      if (arr.length > 0) {
-        console.log('第一个用户的 isAdmin 字段:', arr[0].isAdmin, '类型:', typeof arr[0].isAdmin)
-        console.log('第一个用户完整数据:', arr[0])
-      }
+      // 如果是重置，直接替换 fullList；如果是加载更多，追加到 fullList
+      // 注意：由于使用服务端排序，每次fetch都是有序的下一页
+      const merged = reset ? processedArr : this.data.fullList.concat(processedArr)
       
-      // 处理用户头像URL和确保 isAdmin 字段是正确的布尔值类型
-      const currentYear = new Date().getFullYear()
-      const processedArr = arr.map(user => {
-        const years = Array.isArray(user.membershipPaidYears) ? user.membershipPaidYears : []
-        const paidThisYear = years.includes(currentYear)
-        return {
-          ...user,
-          isAdmin: Boolean(user.isAdmin),
-          paidThisYear
-        }
-      })
-      const merged = reset ? processedArr : this.data.list.concat(processedArr)
-      this.applySortAndRender(merged)
+      const newSkip = (reset ? 0 : this.data.skip) + arr.length
+      const noMore = arr.length < this.data.limit
+      
       this.setData({
-        skip: (reset ? 0 : this.data.skip) + arr.length,
-        noMore: arr.length < this.data.limit,
-        hasMore: arr.length >= this.data.limit
+        fullList: merged,
+        skip: newSkip,
+        noMore: noMore,
+        hasMore: !noMore
       })
+      
+      // 渲染列表
+      this.renderListChunked(merged, !reset)
+      
     } catch (e) {
       console.error('加载失败', e)
       wx.showToast({
@@ -112,64 +248,82 @@ Page({
     try {
       const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       const db = wx.cloud.database({ env: cloudEnv })
+      const _ = db.command
+      const now = new Date()
       const allRes = await db.collection('users').count()
-      const officialRes = await db.collection('users').where({ isOfficialMember: true }).count()
+      const officialRes = await db.collection('users').where(_.or([
+        { isOfficialMember: true, officialMemberUntil: _.gt(now) },
+        { isOfficialMember: true, officialMemberUntil: null },
+        { isOfficialMember: true, officialMemberUntil: _.exists(false) }
+      ])).count()
       this.setData({ totalCount: (allRes && allRes.total) || 0, officialCount: (officialRes && officialRes.total) || 0 })
     } catch (e) {}
   },
 
   onSortByPoints() {
     const run = () => {
-      if (this.data.sortBy !== 'points') this.setData({ sortBy: 'points' })
-      this.applySortAndRender(this.data.list.slice())
+      if (this.data.sortBy !== 'points') {
+        this.setData({ sortBy: 'points' })
+        this.fetch(true)
+      }
     }
     this._debounce('sort', run, this.data.sortDebounceMs)
   },
 
   onSortByName() {
     const run = () => {
-      if (this.data.sortBy !== 'name') this.setData({ sortBy: 'name' })
-      this.applySortAndRender(this.data.list.slice())
+      if (this.data.sortBy !== 'name') {
+        this.setData({ sortBy: 'name' })
+        this.fetch(true)
+      }
     }
     this._debounce('sort', run, this.data.sortDebounceMs)
   },
 
-  applySort(list) {
-    const by = this.data.sortBy
-    if (by === 'points') {
-      return list.sort((a, b) => (Number(b.totalPoints || 0) - Number(a.totalPoints || 0)))
-    }
-    return list.sort((a, b) => {
-      const an = (a.nickName || '').toString()
-      const bn = (b.nickName || '').toString()
-      return an.localeCompare(bn, 'zh')
-    })
-  },
-
-  applySortAndRender(list) {
-    const sorted = this.applySort(list)
-    this.renderListChunked(sorted)
-  },
-
-  renderListChunked(arr) {
+  // 分片渲染，避免一次性setData数据量过大
+  renderListChunked(arr, isAppend = false) {
     // 取消上一次分片渲染
     if (this._renderToken == null) this._renderToken = 0
     this._renderToken += 1
     const token = this._renderToken
-    const chunk = Math.max(6, this.data.chunkSize || 12)
+    
+    const chunk = Math.max(20, this.data.chunkSize || 20)
     const total = arr.length
-    const first = arr.slice(0, Math.min(chunk, total))
-    this.setData({ list: first, members: first })
-    let i = first.length
+    
+    // 如果数据量较小，直接渲染，不走分片
+    if (total <= chunk * 2) {
+      this.setData({ list: arr })
+      return
+    }
+
+    let i = 0
+    if (isAppend) {
+      // 如果是追加数据，从当前长度开始，避免列表回弹
+      i = this.data.list.length
+    } else {
+      // 如果是刷新，从头开始，先渲染一屏
+      i = Math.min(chunk, total)
+      const first = arr.slice(0, i)
+      this.setData({ list: first })
+    }
+    
+    // 递归分片渲染剩余数据
     const step = () => {
-      if (token !== this._renderToken) return
+      if (token !== this._renderToken) return // 如果有新的渲染任务，停止当前任务
       if (i >= total) return
+      
       i = Math.min(i + chunk, total)
       const part = arr.slice(0, i)
-      this.setData({ list: part, members: part })
-      setTimeout(step, 16)
+      this.setData({ list: part })
+      
+      if (i < total) {
+        setTimeout(step, 32) // 稍微增加延时，给UI线程喘息
+      }
     }
-    setTimeout(step, 16)
+    
+    if (i < total) {
+      setTimeout(step, 32)
+    }
   },
 
   _debounce(key, fn, wait) {
@@ -181,33 +335,20 @@ Page({
     }, Math.max(0, wait || 150))
   },
 
+  // 触底加载更多
   onLoadMore() {
-    if (!this.data.noMore) this.fetch(false)
-  },
-
-  onPointsInput(e) {
-    const userId = e.currentTarget.dataset.userId
-    const value = e.detail.value
-    
-    // 验证输入值，只允许数字和负号
-    const validValue = value.replace(/[^-0-9]/g, '')
-    
-    // 确保负号只能在开头
-    const sanitizedValue = validValue.replace(/(?!^)-/g, '')
-    
-    this.setData({ [`deltaMap.${userId}`]: sanitizedValue })
+    if (!this.data.noMore && !this.data.loading) {
+      this.fetch(false)
+    }
   },
 
   onNewPointsInput(e) {
     const id = e.currentTarget.dataset.id
     const value = e.detail.value
-    
     // 验证输入值，只允许数字和负号
     const validValue = value.replace(/[^-0-9]/g, '')
-    
     // 确保负号只能在开头
     const sanitizedValue = validValue.replace(/(?!^)-/g, '')
-    
     this.setData({ [`newPointsMap.${id}`]: sanitizedValue })
   },
 
@@ -216,84 +357,23 @@ Page({
     try {
       wx.removeStorageSync('leaderboard_cache');
       wx.removeStorageSync('leaderboard_cache_time');
-      console.log('排行榜缓存已清除');
-    } catch (e) {
-      console.warn('清除排行榜缓存失败:', e);
-    }
-  },
-
-  async adjustPoints(e) {
-    const userId = e.currentTarget.dataset.userId
-    const deltaRaw = this.data.deltaMap[userId] || ''
-    const delta = Number(deltaRaw)
-    
-    if (!userId || !Number.isFinite(delta) || delta === 0) {
-      app.showToast('请输入非零数字', 'error')
-      return
-    }
-    
-    wx.showModal({
-      title: '确认调整积分',
-      content: `确认为该用户${delta > 0 ? '增加' : '扣减'} ${Math.abs(delta)} 分？`,
-      confirmText: '确认',
-      cancelText: '取消',
-      success: async (res) => {
-        if (!res.confirm) return
-        
-        try {
-          app.showLoading('提交中...')
-          
-          const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-          const result = await wx.cloud.callFunction({
-            name: 'adminManageMembers',
-            config: { env: cloudEnv },
-            data: { 
-              action: 'updatePoints', 
-              data: { 
-                id: userId, 
-                delta, 
-                reason: '后台调整' 
-              } 
-            }
-          })
-          
-          if (!result.result || result.result.success !== true) {
-            throw new Error(result.result?.message || '操作失败')
-          }
-          
-          app.showToast('积分调整成功')
-          this.setData({ [`deltaMap.${userId}`]: '' })
-          
-          // 清除排行榜缓存，确保积分更新后排行榜立即反映变化
-          this.clearLeaderboardCache()
-          
-          this.fetch(true) // 刷新列表
-          
-        } catch (error) {
-          console.error('调整失败:', error)
-          app.showToast(error.message || '操作失败', 'error')
-        } finally {
-          app.hideLoading()
-        }
-      }
-    })
+    } catch (e) {}
   },
 
   // 设置积分
   async onSetPoints(e) {
-    const { id, openid } = e.currentTarget.dataset;
+    const { id } = e.currentTarget.dataset;
     const newPoints = parseInt(this.data.newPointsMap[id]);
     
     if (isNaN(newPoints) || newPoints < -8000) {
       wx.showToast({
-        title: '积分值不能低于-8000分',
+        title: '请输入有效积分',
         icon: 'none'
       });
       return;
     }
 
-    // 获取当前用户信息
-    const currentMember = this.data.list.find(member => member._id === id);
+    const currentMember = this.data.fullList.find(member => member._id === id);
     const currentPoints = currentMember ? (currentMember.totalPoints || 0) : 0;
 
     wx.showModal({
@@ -312,37 +392,22 @@ Page({
                 action: 'setPoints',
                 data: {
                   id: id,
-                  openid: openid,
                   points: newPoints
                 }
               }
             });
 
             if (result.result && result.result.success) {
-              wx.showToast({
-                title: '设置成功',
-                icon: 'success'
-              });
-              
-              // 清空输入框
-              this.setData({
-                [`newPointsMap.${id}`]: ''
-              });
-              
-              // 清除排行榜缓存，确保积分更新后排行榜立即反映变化
+              wx.showToast({ title: '设置成功', icon: 'success' });
+              this.setData({ [`newPointsMap.${id}`]: '' });
               this.clearLeaderboardCache();
-              
-              // 刷新数据
-              this.fetch(true);
+              this.fetch(true); // 积分改变影响排序，必须刷新
             } else {
               throw new Error(result.result?.message || '设置失败');
             }
           } catch (error) {
             console.error('设置积分失败:', error);
-            wx.showToast({
-              title: error.message || '设置失败',
-              icon: 'none'
-            });
+            wx.showToast({ title: error.message || '设置失败', icon: 'none' });
           } finally {
             wx.hideLoading();
           }
@@ -356,64 +421,35 @@ Page({
     const userId = e.currentTarget.dataset.userId
     const isAdminRaw = e.currentTarget.dataset.isAdmin
     const nickName = e.currentTarget.dataset.nickName
+    const isAdmin = isAdminRaw === true || String(isAdminRaw) === 'true'
     
-    // 修复：将字符串转换为布尔值
-    const isAdmin = isAdminRaw === 'true' || isAdminRaw === true
+    const action = isAdmin ? '取消管理员' : '设为管理员'
     
-    const action = isAdmin ? '取消管理员权限' : '设置为管理员'
-    const content = isAdmin 
-      ? `确认取消 ${nickName} 的管理员权限吗？取消后将无法进行管理操作。`
-      : `确认将 ${nickName} 设置为管理员吗？设置为管理员后可发布公告、审核积分、管理兑换。`
-
     wx.showModal({
       title: action,
-      content: content,
-      confirmText: '确认',
-      cancelText: '取消',
+      content: `确认将 ${nickName} ${action}吗？`,
       success: async (res) => {
         if (!res.confirm) return
         
         try {
           app.showLoading('处理中...')
-          
           const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-          const result = await wx.cloud.callFunction({
+          await wx.cloud.callFunction({
             name: 'adminManageMembers',
             config: { env: cloudEnv },
             data: { 
               action: 'setAdmin', 
-              data: { 
-                id: userId, 
-                isAdmin: !isAdmin 
-              } 
+              data: { id: userId, isAdmin: !isAdmin } 
             }
           })
           
-          if (!result.result || result.result.success !== true) {
-            throw new Error(result.result?.message || '操作失败')
-          }
+          app.showToast('操作成功')
           
-          // 立即更新本地数据，确保UI及时响应
-          const updatedList = this.data.list.map(item => {
-            if (item._id === userId) {
-              return { ...item, isAdmin: !isAdmin }
-            }
-            return item
-          })
-          
-          this.setData({
-            list: updatedList
-          })
-          
-          app.showToast(isAdmin ? '已取消管理员权限' : '已设置为管理员')
-          
-          // 不再自动刷新数据，避免覆盖本地更新
+          // 本地更新状态，避免全量刷新
+          this.updateLocalList(userId, { isAdmin: !isAdmin })
           
         } catch (error) {
-          console.error('权限更新失败:', error)
           app.showToast(error.message || '操作失败', 'error')
-          // 只在操作失败时刷新数据，恢复到服务器状态
-          this.fetch(true)
         } finally {
           app.hideLoading()
         }
@@ -421,318 +457,122 @@ Page({
     })
   },
 
-  // 新增：切换兑换锁定状态
+  // 切换兑换锁定状态
   async toggleExchangeLock(e) {
-    const userId = e?.currentTarget?.dataset?.userId
-    // dataset 布尔可能是字符串，统一转为真正布尔
-    const rawIsLocked = e?.currentTarget?.dataset?.isLocked
-    const isLocked = rawIsLocked === true || rawIsLocked === 'true' || rawIsLocked === 1 || rawIsLocked === '1'
-    const nickName = e?.currentTarget?.dataset?.nickName || '该用户'
-
-    if (!userId) {
-      console.error('toggleExchangeLock: 缺少 userId，dataset=', e?.currentTarget?.dataset)
-      app.showToast('操作失败：缺少用户ID', 'error')
-      return
-    }
-    // 非管理员保护（防止无权限调用云函数直接失败）
-    if (app?.globalData?.isAdmin !== true) {
-      app.showToast('仅管理员可进行此操作', 'error')
-      return
-    }
+    const { userId, isLocked, nickName } = e.currentTarget.dataset
+    const locked = isLocked === true || String(isLocked) === 'true'
+    const actionText = locked ? '解锁' : '锁定'
     
-    const action = isLocked ? '解锁兑换' : '锁定兑换'
-    const content = isLocked 
-      ? `确认解锁 ${nickName} 的兑换权限吗？解锁后该用户可以正常兑换商品。`
-      : `确认锁定 ${nickName} 的兑换权限吗？锁定后该用户将无法兑换商品，直到被解锁或参加比赛后自动解锁。`
-
-    wx.showModal({
-      title: action,
-      content: content,
-      confirmText: '确认',
-      cancelText: '取消',
-      success: async (res) => {
-        if (!res.confirm) return
-        
-        try {
-          app.showLoading('处理中...')
-          
-          const result = await wx.cloud.callFunction({
-            name: 'manageExchangeLock',
-            data: { 
-              action: isLocked ? 'unlockUser' : 'lockUser', 
-              data: { 
-                userId: userId,
-                reason: isLocked ? '管理员手动解锁' : '管理员手动锁定'
-              } 
-            }
-          })
-          
-          if (!result?.result || result.result.success !== true) {
-            const msg = result?.result?.message || '操作失败'
-            throw new Error(msg)
-          }
-          
-          // 立即更新本地数据，确保UI及时响应
-          const updatedList = this.data.list.map(item => {
-            if (item._id === userId) {
-              return { ...item, exchange_locked: !isLocked }
-            }
-            return item
-          })
-          
-          this.setData({
-            list: updatedList
-          })
-          
-          app.showToast(isLocked ? '已解锁兑换权限' : '已锁定兑换权限')
-          
-        } catch (error) {
-          console.error('兑换权限更新失败:', error)
-          const errMsg = error?.errMsg || error?.message || '云函数调用失败'
-          // 常见：无管理员权限、云环境未初始化、函数未部署
-          if (/无管理员权限/.test(errMsg)) {
-            app.showToast('操作失败：仅管理员可操作', 'error')
-          } else if (/cloud.callFunction/.test(errMsg)) {
-            app.showToast('云函数调用失败，请检查网络/云环境配置', 'error')
-          } else {
-            app.showToast(errMsg, 'error')
-          }
-          // 只在操作失败时刷新数据，恢复到服务器状态
-          this.fetch(true)
-        } finally {
-          app.hideLoading()
-        }
-      }
-    })
-  },
-
-  // 新增：切换正式会员状态
-  async toggleOfficialMember(e) {
-    const userId = e?.currentTarget?.dataset?.userId
-    const rawIsOfficial = e?.currentTarget?.dataset?.isOfficial
-    const isOfficial = rawIsOfficial === true || rawIsOfficial === 'true' || rawIsOfficial === 1 || rawIsOfficial === '1'
-    const nickName = e?.currentTarget?.dataset?.nickName || '该用户'
-
-    if (!userId) return app.showToast('缺少用户ID', 'error')
-    if (app?.globalData?.isAdmin !== true) return app.showToast('仅管理员可操作', 'error')
-
-    const actionText = isOfficial ? '取消正式会员' : '设为正式会员'
-    wx.showModal({
-      title: actionText,
-      content: `${actionText}：${nickName}？`,
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          app.showLoading('处理中...')
-          const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-          const result = await wx.cloud.callFunction({
-            name: 'adminManageMembers',
-            config: { env: cloudEnv },
-            data: { action: 'setMembership', data: { id: userId, isOfficialMember: !isOfficial } }
-          })
-          if (!result.result || result.result.success !== true) throw new Error(result.result?.message || '操作失败')
-          // 更新本地列表
-          const updatedList = this.data.list.map(item => item._id === userId ? { ...item, isOfficialMember: !isOfficial } : item)
-          this.setData({ list: updatedList })
-          app.showToast('更新成功')
-        } catch (err) {
-          console.error('更新正式会员失败', err)
-          app.showToast(err.message || '操作失败', 'error')
-          this.fetch(true)
-        } finally {
-          app.hideLoading()
-        }
-      }
-    })
-  },
-
-  // 新增：标记当年缴费
-  async markPaidThisYear(e) {
-    const userId = e?.currentTarget?.dataset?.userId
-    const nickName = e?.currentTarget?.dataset?.nickName || '该用户'
-    if (!userId) return app.showToast('缺少用户ID', 'error')
-    if (app?.globalData?.isAdmin !== true) return app.showToast('仅管理员可操作', 'error')
-    const currentYear = new Date().getFullYear()
-
-    wx.showModal({
-      title: '标记当年缴费',
-      content: `确认标记 ${nickName} 已缴纳 ${currentYear} 年会费？`,
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          app.showLoading('处理中...')
-          const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-          const result = await wx.cloud.callFunction({
-            name: 'adminManageMembers',
-            config: { env: cloudEnv },
-            data: { action: 'setMembership', data: { id: userId, paidYear: currentYear } }
-          })
-          if (!result.result || result.result.success !== true) throw new Error(result.result?.message || '操作失败')
-          // 更新本地列表：追加年份到 membershipPaidYears
-          const updatedList = this.data.list.map(item => {
-            if (item._id === userId) {
-              const years = Array.isArray(item.membershipPaidYears) ? item.membershipPaidYears.slice() : []
-              if (!years.includes(currentYear)) years.push(currentYear)
-              return { ...item, membershipPaidYears: years, paidThisYear: true }
-            }
-            return item
-          })
-          this.setData({ list: updatedList })
-          app.showToast('标记成功')
-        } catch (err) {
-          console.error('标记缴费失败', err)
-          app.showToast(err.message || '操作失败', 'error')
-          this.fetch(true)
-        } finally {
-          app.hideLoading()
-        }
-      }
-    })
-  },
-
-
-
-  // 导出用户积分数据
-  async onExportData() {
-    if (this.data.loading || this.data.list.length === 0) return
-    
-    wx.showModal({
-      title: '导出数据',
-      content: '确认导出所有用户积分数据到CSV文件？',
-      success: async (res) => {
-        if (!res.confirm) return
-        
-        try {
-          app.showLoading('正在导出数据...')
-          
-          // 调用云函数获取完整用户数据
-          const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-          const result = await wx.cloud.callFunction({
-            name: 'adminManageMembers',
-            config: { env: cloudEnv },
-            data: { 
-              action: 'exportData'
-            }
-          })
-          
-          if (!result.result || result.result.success !== true) {
-            throw new Error(result.result?.message || '获取数据失败')
-          }
-          
-          const userData = result.result.data || []
-          if (userData.length === 0) {
-            app.showToast('暂无数据可导出', 'error')
-            return
-          }
-          
-          // 生成CSV内容
-          const csvContent = this.generateCSV(userData)
-          
-          // 保存文件到本地
-          await this.saveCSVFile(csvContent)
-          
-        } catch (error) {
-          console.error('导出失败:', error)
-          app.showToast(error.message || '导出失败', 'error')
-        } finally {
-          app.hideLoading()
-        }
-      }
-    })
-  },
-
-  // 生成CSV内容
-  generateCSV(userData) {
-    // CSV表头
-    const headers = [
-      '用户昵称',
-      '用户ID', 
-      '总积分',
-      '激活状态',
-      '管理员状态',
-      '注册时间',
-      '最后活动时间',
-      '积分获得次数'
-    ]
-    
-    // 生成CSV行
-    const rows = userData.map(user => {
-      return [
-        user.nickName || '未知昵称',
-        user._openid || user.openid || '',
-        user.totalPoints || 0,
-        user.isActivated ? '已激活' : '未激活',
-        user.isAdmin ? '是' : '否',
-        user.createTime ? this.formatDate(user.createTime) : '',
-        user.lastActiveTime ? this.formatDate(user.lastActiveTime) : '',
-        user.pointsCount || 0
-      ]
-    })
-    
-    // 组合CSV内容
-    const csvRows = [headers, ...rows]
-    return csvRows.map(row => 
-      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
-    ).join('\n')
-  },
-
-  // 格式化日期
-  formatDate(timestamp) {
-    if (!timestamp) return ''
-    const date = new Date(timestamp)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-  },
-
-  // 保存CSV文件到本地
-  async saveCSVFile(csvContent) {
-    try {
-      const fs = wx.getFileSystemManager()
-      const fileName = `用户积分数据_${this.formatDate(Date.now()).replace(/[:\s]/g, '_')}.csv`
-      const filePath = `${wx.env.USER_DATA_PATH}/${fileName}`
-      
-      // 写入文件
-      fs.writeFileSync(filePath, csvContent, 'utf8')
-      
-      // 显示成功提示并提供操作选项
+    const confirmed = await new Promise((resolve) => {
       wx.showModal({
-        title: '导出成功',
-        content: `文件已保存为：${fileName}\n\n请选择后续操作：`,
-        confirmText: '分享文件',
-        cancelText: '完成',
-        success: (res) => {
-          if (res.confirm) {
-            // 分享文件
-            wx.shareFileMessage({
-              filePath: filePath,
-              fileName: fileName,
-              success: () => {
-                app.showToast('文件分享成功')
-              },
-              fail: (err) => {
-                console.error('分享失败:', err)
-                // 如果分享失败，尝试打开文档
-                wx.openDocument({
-                  filePath: filePath,
-                  fileType: 'csv',
-                  success: () => {
-                    app.showToast('文件已打开')
-                  },
-                  fail: (openErr) => {
-                    console.error('打开文件失败:', openErr)
-                    app.showToast('文件已保存到本地', 'success')
-                  }
-                })
-              }
-            })
-          } else {
-            app.showToast('文件已保存到本地', 'success')
-          }
+        title: `确认${actionText}？`,
+        content: `确定要${actionText}用户 "${nickName}" 的兑换权限吗？`,
+        confirmText: '确定',
+        cancelText: '取消',
+        success: (res) => resolve(res && res.confirm === true),
+        fail: () => resolve(false)
+      })
+    })
+    if (!confirmed) return
+
+    try {
+      this.setData({ loading: true })
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const res = await wx.cloud.callFunction({
+        name: 'adminManageMembers',
+        config: { env: cloudEnv },
+        data: {
+          action: 'setExchangeLock',
+          data: { id: userId, lock: !locked }
         }
       })
       
-    } catch (error) {
-      console.error('保存文件失败:', error)
-      throw new Error('保存文件失败')
+      if (!res.result || !res.result.success) throw new Error(res.result?.message || '操作失败')
+      
+      app.showToast('操作成功')
+      const current = this.data.fullList.find(it => it._id === userId) || {}
+      const untilTs = this._toTs(current.officialMemberUntil)
+      const isOfficialValid = current.isOfficialMember === true && (untilTs === 0 || untilTs > Date.now())
+      const nextLocked = !locked
+      this.updateLocalList(userId, { exchange_locked: nextLocked, isExchangeActivated: isOfficialValid && !nextLocked })
+    } catch (err) {
+      console.error('Toggle lock failed', err)
+      app.showToast('操作失败', 'error')
+    } finally {
+      this.setData({ loading: false })
     }
+  },
+
+  // 切换正式会员
+  async toggleOfficialMember(e) {
+    const userId = e.currentTarget.dataset.userId
+    const isOfficialRaw = e.currentTarget.dataset.isOfficial
+    const nickName = e.currentTarget.dataset.nickName
+    const isOfficial = isOfficialRaw === true || String(isOfficialRaw) === 'true'
+
+    const action = isOfficial ? '取消正式会员' : '设为正式会员'
+    
+    wx.showModal({
+      title: action,
+      content: `确认更改 ${nickName} 的会员状态吗？`,
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          app.showLoading('处理中...')
+          const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+          const r = await wx.cloud.callFunction({
+            name: 'adminManageMembers',
+            config: { env: cloudEnv },
+            data: { 
+              action: 'setMembership', 
+              data: { id: userId, isOfficialMember: !isOfficial } 
+            }
+          })
+
+          if (!r.result || !r.result.success) throw new Error(r.result?.message || '操作失败')
+          const d = (r.result && r.result.data) || {}
+          const nextOfficial = !isOfficial
+          const nextUntil = d.officialMemberUntil || (nextOfficial ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null)
+          const nextLocked = typeof d.exchange_locked === 'boolean' ? d.exchange_locked : (nextOfficial ? true : false)
+          
+          app.showToast('操作成功')
+          this.updateLocalList(userId, {
+            isOfficialMember: nextOfficial,
+            officialMemberUntil: nextUntil,
+            officialMemberUntilText: nextOfficial ? this._formatUntil(this._toTs(nextUntil)) : '',
+            exchange_locked: nextLocked,
+            isExchangeActivated: nextOfficial && !nextLocked
+          })
+          this.updateCounts() // 更新统计
+          
+        } catch (error) {
+          app.showToast(error.message || '操作失败', 'error')
+        } finally {
+          app.hideLoading()
+        }
+      }
+    })
+  },
+
+  // 辅助：本地更新列表数据
+  updateLocalList(userId, updates) {
+    const updateItem = (item) => {
+      if (item._id === userId) {
+        return { ...item, ...updates }
+      }
+      return item
+    }
+
+    const newFullList = this.data.fullList.map(updateItem)
+    const newList = this.data.list.map(updateItem)
+
+    this.setData({
+      fullList: newFullList,
+      list: newList
+    })
+  },
+
+  onExportData() {
+    wx.showToast({ title: '功能开发中', icon: 'none' })
   }
 })

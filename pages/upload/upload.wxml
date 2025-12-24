@@ -90,6 +90,9 @@
 
     <!-- Tab 2: 周训练打卡 -->
     <view class="form-section" wx:if="{{currentTab === 2}}">
+      <view class="tip-box" style="background:#e6f7ff; color:#007aff; padding:16rpx; border-radius:8rpx; margin-bottom:20rpx; font-size:24rpx;">
+        💡 提示：同一周仅需在一个地方打卡（普通打卡或训练营打卡），重复打卡不累计训练时间。
+      </view>
       <view class="form-group">
         <label>日期</label>
         <picker mode="date" value="{{date}}" bindchange="bindDateChange">
@@ -176,11 +179,10 @@
       <scroll-view scroll-y class="modal-body">
         <view class="rule-section">
           <text class="rule-title">比赛类别:</text>
-          <text class="rule-item">- 大铁: 1200分</text>
-          <text class="rule-item">- 70.3: 600分</text>
+          <text class="rule-item">- 大铁: 1500分</text>
+          <text class="rule-item">- 70.3: 700分</text>
           <text class="rule-item">- 标铁: 300分</text>
-          <text class="rule-item">- 半程马拉松: 300分</text>
-          <text class="rule-item">- 远距赛事 (半程以上): 100分</text>
+          <text class="rule-item">- 路跑赛事（半程以上）: 100分</text>
           <text class="rule-item">- 站台前三: +200分</text>
         </view>
         <view class="rule-section">

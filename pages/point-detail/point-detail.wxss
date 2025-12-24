@@ -1,87 +1,80 @@
 /* pages/point-detail/point-detail.wxss */
 .container {
-  padding: 20rpx;
-  background-color: #f7f7f7;
-  min-height: 100vh;
-}
-
-.loading-container, .empty-container {
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 200rpx;
-  color: #888;
+  background-color: #f7f8fa;
 }
 
-.loading-spinner {
-  width: 40rpx;
-  height: 40rpx;
-  border: 4rpx solid #dcdcdc;
-  border-top-color: #888;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20rpx;
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 60rpx 0;
+  color: #999;
+  font-size: 26rpx;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.empty-icon {
-  width: 128rpx;
-  height: 128rpx;
-  margin-bottom: 20rpx;
+.record-scroll {
+  flex: 1;
+  padding: 16rpx 24rpx;
+  box-sizing: border-box;
 }
 
 .record-list {
-  width: 100%;
+  background: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
+  padding: 0 8rpx;
 }
 
-.record-item {
+.record-card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  background-color: #fff;
-  padding: 30rpx 20rpx;
-  border-radius: 10rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.05);
+  justify-content: space-between;
+  padding: 24rpx 16rpx;
+  border-bottom: 1rpx solid #f5f5f5;
 }
 
-.record-info {
+.record-card:last-child {
+  border-bottom: none;
+}
+
+.record-main {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  margin-right: 20rpx;
 }
 
 .record-reason {
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #333;
-  margin-bottom: 10rpx;
+  font-weight: 600;
+  margin-bottom: 8rpx;
 }
 
 .record-time {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #999;
 }
 
-.record-points {
-  font-size: 36rpx;
+.record-amount {
+  font-size: 32rpx;
   font-weight: bold;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-.points-gain {
-  color: #4caf50;
+.record-amount.plus {
+  color: #faad14;
 }
 
-.points-loss {
-  color: #f44336;
+.record-amount.minus {
+  color: #333;
 }
 
-.loading-more {
+.list-footer {
   text-align: center;
-  padding: 20rpx;
-  color: #888;
+  padding: 20rpx 0;
+  font-size: 22rpx;
+  color: #ccc;
+  background: #f7f8fa; /* Match container bg */
 }

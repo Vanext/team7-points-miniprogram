@@ -1,4 +1,6 @@
 // 消息中心页面
+const app = getApp()
+
 Page({
   data: {
     messages: [],
@@ -62,6 +64,7 @@ Page({
     this.setData({ loading: true })
 
     try {
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       const query = {
         skip: this.data.skip,
         limit: this.data.limit
@@ -73,8 +76,9 @@ Page({
 
       const res = await wx.cloud.callFunction({
         name: 'messageManager',
+        config: { env: cloudEnv },
         data: {
-          action: 'list',
+          action: 'aggregateList',
           query
         }
       })
@@ -103,31 +107,18 @@ Page({
   // 加载未读消息数量
   async loadUnreadCount() {
     try {
-      const types = ['all', 'audit_result', 'exchange_status', 'system']
-      const promises = types.map(type => {
-        const query = type === 'all' ? {} : { type }
-        return wx.cloud.callFunction({
-          name: 'messageManager',
-          data: {
-            action: 'getUnreadCount',
-            query
-          }
-        })
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const r = await wx.cloud.callFunction({
+        name: 'messageManager',
+        config: { env: cloudEnv },
+        data: { action: 'getUnreadSummary', query: {} }
       })
-
-      const results = await Promise.all(promises)
-      const unreadCount = {}
-      
-      types.forEach((type, index) => {
-        const result = results[index]
-        if (result.result.success) {
-          unreadCount[type] = result.result.data.count
-        } else {
-          unreadCount[type] = 0
-        }
-      })
-
-      this.setData({ unreadCount })
+      const counts = (r && r.result && r.result.success && r.result.data && r.result.data.counts) ? r.result.data.counts : null
+      if (counts) {
+        this.setData({ unreadCount: counts })
+      } else {
+        this.setData({ unreadCount: { all: 0, audit_result: 0, exchange_status: 0, system: 0 } })
+      }
     } catch (error) {
       console.error('加载未读数量失败', error)
     }
@@ -139,7 +130,7 @@ Page({
     
     // 标记为已读
     if (!message.isRead) {
-      this.markAsRead(message._id)
+      this.markAsRead(message)
     }
 
     // 根据消息类型跳转到相应页面
@@ -155,13 +146,17 @@ Page({
   },
 
   // 标记消息为已读
-  async markAsRead(messageId) {
+  async markAsRead(message) {
     try {
+      const messageId = message && message._id
+      if (!messageId) return
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       await wx.cloud.callFunction({
         name: 'messageManager',
+        config: { env: cloudEnv },
         data: {
           action: 'markRead',
-          data: { id: messageId }
+          data: { id: messageId, source: message.source }
         }
       })
 
@@ -189,8 +184,10 @@ Page({
         data.type = this.data.activeTab
       }
 
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       await wx.cloud.callFunction({
         name: 'messageManager',
+        config: { env: cloudEnv },
         data: {
           action: 'markAllRead',
           data
@@ -222,7 +219,9 @@ Page({
 
   // 删除消息
   async deleteMessage(e) {
-    const messageId = e.currentTarget.dataset.id
+    const message = e.currentTarget.dataset.message
+    const messageId = message && message._id
+    if (!messageId) return
     
     try {
       const res = await wx.showModal({
@@ -232,11 +231,13 @@ Page({
 
       if (!res.confirm) return
 
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       await wx.cloud.callFunction({
         name: 'messageManager',
+        config: { env: cloudEnv },
         data: {
           action: 'delete',
-          data: { id: messageId }
+          data: { id: messageId, source: message.source }
         }
       })
 
@@ -263,8 +264,25 @@ Page({
   // 格式化时间
   formatTime(timestamp) {
     if (!timestamp) return ''
-    
-    const date = new Date(timestamp)
+    let date = null
+    if (timestamp instanceof Date) {
+      date = timestamp
+    } else if (typeof timestamp === 'number') {
+      date = new Date(timestamp)
+    } else if (typeof timestamp === 'string') {
+      date = new Date(timestamp)
+    } else if (timestamp && timestamp.$date) {
+      date = new Date(timestamp.$date)
+    } else if (timestamp && timestamp.time) {
+      date = new Date(timestamp.time)
+    } else {
+      try {
+        date = new Date(timestamp)
+      } catch (e) {
+        return ''
+      }
+    }
+    if (!date || isNaN(date.getTime())) return ''
     const now = new Date()
     const diff = now - date
     

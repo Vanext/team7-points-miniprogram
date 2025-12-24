@@ -383,6 +383,13 @@ Page({
       url: '/pages/admin/exchange/exchange'
     })
   },
+  
+  // 跳转到队服发放管理
+  goToApparelManagement() {
+    wx.navigateTo({
+      url: '/pages/admin/apparel/apparel'
+    })
+  },
 
   // 格式化数字
   formatNumber(num) {

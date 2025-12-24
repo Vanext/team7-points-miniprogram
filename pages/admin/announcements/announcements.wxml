@@ -1,130 +1,154 @@
 <view class="container">
-  <view class="subtabs">
-    <view class="subtab {{subTab==='ann'?'active':''}}" data-key="ann" bindtap="switchSubTab">公告管理</view>
-    <view class="subtab {{subTab==='bulletin'?'active':''}}" data-key="bulletin" bindtap="switchSubTab">训练通告</view>
+  <!-- Subtabs Header -->
+  <view class="tabs-header">
+    <view class="tab-item {{subTab==='ann'?'active':''}}" data-key="ann" bindtap="switchSubTab">公告管理</view>
+    <view class="tab-item {{subTab==='bulletin'?'active':''}}" data-key="bulletin" bindtap="switchSubTab">训练通告</view>
+    
+    <!-- Add Action (Context Sensitive) -->
+    <view class="header-action" wx:if="{{subTab==='ann'}}" bindtap="onToggleCreateForm">
+      <text class="icon">+</text> 新增
+    </view>
+    <view class="header-action" wx:if="{{subTab==='bulletin'}}" bindtap="tbToggleCreateForm">
+      <text class="icon">+</text> 新增
+    </view>
   </view>
 
-  <view wx:if="{{subTab==='ann'}}">
-  <view class="list-actions" style="display:flex; justify-content:flex-end; align-items:center; margin: 0 0 16rpx 0;">
-    <button class="btn primary" bindtap="onToggleCreateForm" style="position: relative; left: -6rpx; top: -10rpx">新增公告</button>
-  </view>
-  <view class="card" wx:if="{{showCreateForm}}" style="position: relative; left: 0rpx; top: -33rpx">
-    <view class="form-row" style="height: 89rpx; display: flex; box-sizing: border-box">
-      <text class="label">标题</text>
-      <input style="height: 62rpx; display: block; box-sizing: border-box" class="input" placeholder="请输入公告标题" bindinput="onInputTitle" value="{{title}}" />
-    </view>
-    <view class="form-row">
-      <text class="label">类型</text>
-      <picker range="{{types}}" value="{{typeIndex}}" bindchange="onTypeChange">
-        <view class="picker">{{types[typeIndex]}}</view>
-      </picker>
-    </view>
-    <view class="form-row multiline">
-      <text class="label">内容</text>
-      <textarea class="textarea" placeholder="请输入详细的公告内容，支持换行格式" bindinput="onInputContent" value="{{content}}" />
-    </view>
-    <view class="form-row">
-      <text class="label">状态</text>
-      <switch checked="{{isActive}}" bindchange="onActiveChange" />
-    </view>
-    <button class="btn primary" bindtap="onCreate" style="position: relative; left: 462rpx; top: -1rpx">发布公告</button>
-  </view>
-
-  <view class="card" style="position: relative; left: 0rpx; top: -18rpx">
-    <view class="section-title">已发布公告</view>
-    <block wx:for="{{list}}" wx:key="_id">
-      <view class="list-item">
-        <view style="display:flex; justify-content:space-between; align-items:center;">
-          <view class="list-title">{{item.title}}</view>
-          <view style="display:flex; align-items:center; gap: 12rpx;">
-            <text class="home-switch-tip">首页展示</text>
-            <switch checked="{{item.showOnHome}}" bindchange="onHomeSwitchChange" data-id="{{item._id}}" />
-          </view>
-        </view>
-        <view class="list-sub">{{item.type}} · {{item.updateTimeText}}</view>
-        <view class="actions">
-          <button size="mini" class="btn-center" bindtap="onEdit" data-id="{{item._id}}">编辑</button>
-          <button size="mini" class="btn-center" type="warn" bindtap="onDelete" data-id="{{item._id}}">删除</button>
-        </view>
-      </view>
-    </block>
-    <view wx:if="{{list.length === 0}}" class="empty">暂无公告</view>
-  </view>
-
-  <!-- 编辑弹窗 -->
-  <view wx:if="{{editModal.show}}" class="modal-overlay">
-    <view class="modal-content">
-      <view class="modal-header">
-        <text class="modal-title">编辑公告</text>
-        <text class="modal-close" bindtap="onEditModalCancel">×</text>
-      </view>
-      
-      <scroll-view class="modal-body" scroll-y="true" enhanced="true" show-scrollbar="false">
-        <view class="modal-body-content">
-          <view class="form-row">
-            <text class="label">标题</text>
-            <input class="input" placeholder="请输入公告标题" bindinput="onEditModalInputTitle" value="{{editModal.title}}" />
-          </view>
-          
-          <view class="form-row">
-            <text class="label">类型</text>
-            <picker range="{{types}}" value="{{editModal.typeIndex}}" bindchange="onEditModalTypeChange">
-              <view class="picker">{{types[editModal.typeIndex]}}</view>
-            </picker>
-          </view>
-          
-          <view class="form-row multiline">
-            <text class="label">内容</text>
-            <textarea class="textarea" placeholder="请输入详细的公告内容，支持换行格式" bindinput="onEditModalInputContent" value="{{editModal.content}}" />
-          </view>
-          
-          <view class="form-row">
-            <text class="label">状态</text>
-            <switch checked="{{editModal.isActive}}" bindchange="onEditModalActiveChange" />
-          </view>
-        </view>
-      </scroll-view>
-      
-      <view class="modal-footer">
-        <button class="btn secondary" bindtap="onEditModalCancel">取消</button>
-        <button class="btn primary" bindtap="onEditModalConfirm">确认更新</button>
-      </view>
-    </view>
-  </view>
-  </view>
-
-  <view wx:if="{{subTab==='bulletin'}}">
-    <view class="list-actions" style="display:flex; justify-content:flex-end; align-items:center; margin: 0 0 16rpx 0;">
-      <button class="btn primary" bindtap="tbToggleCreateForm">新增通告</button>
-    </view>
-    <view class="card" wx:if="{{tbShowCreateForm || tbEditing.id}}">
-      <view class="section-title">训练通告编辑</view>
-      <view class="form-row"><text class="label">时间</text><input class="input" placeholder="如：12/03 19:30" bindinput="tbBindInput" data-key="time" value="{{tbEditing.time}}"/></view>
-      <view class="form-row"><text class="label">地点</text><input class="input" placeholder="如：高科体育场" bindinput="tbBindInput" data-key="location" value="{{tbEditing.location}}"/></view>
-      <view class="form-row multiline"><text class="label">内容</text><textarea class="textarea" placeholder="训练内容说明" bindinput="tbBindInput" data-key="content" value="{{tbEditing.content}}"/></view>
-      <view class="form-row"><text class="label">设为当前通告</text><switch checked="{{tbEditing.isActive}}" bindchange="tbToggleActive"/></view>
-      <view class="form-row"><text class="label">报名上限</text><input class="input" type="number" placeholder="如：30" bindinput="tbBindInput" data-key="maxParticipants" value="{{tbEditing.maxParticipants}}"/></view>
-      <view class="actions"><button class="btn primary" bindtap="tbSave">保存</button><button class="btn secondary" bindtap="tbCancel">取消</button></view>
-    </view>
-    <view class="card">
-      <view class="section-title">训练通告列表</view>
-      <block wx:for="{{tbList}}" wx:key="_id">
-        <view class="list-item">
-          <view style="display:flex; justify-content:space-between; align-items:center;">
-            <view class="list-title" bindtap="tbEdit" data-item="{{item}}">{{item.time}} · {{item.location}} · {{item.isActive?'当前':''}}</view>
-            <view style="display:flex; align-items:center; gap: 12rpx;">
-              <text class="home-switch-tip">首页展示</text>
-              <switch checked="{{item.showOnHome}}" bindchange="tbToggleHome" data-id="{{item._id}}" />
+  <scroll-view scroll-y class="content-scroll">
+    <!-- Announcements List -->
+    <view class="list-container" wx:if="{{subTab==='ann'}}">
+      <block wx:for="{{list}}" wx:key="_id">
+        <view class="card">
+          <view class="card-main">
+            <view class="card-header">
+              <text class="card-title">{{item.title}}</text>
+              <view class="status-badge {{item.isActive ? 'active' : 'inactive'}}">
+                {{item.isActive ? '已发布' : '草稿'}}
+              </view>
+            </view>
+            <view class="card-meta">
+              <text class="meta-tag type">{{item.type}}</text>
+              <text class="meta-date">{{item.updateTimeText}}</text>
             </view>
           </view>
-          <view class="list-sub">{{item.content}}</view>
-          <view class="actions">
-            <button size="mini" class="btn-center" data-id="{{item._id}}" data-item="{{item}}" bindtap="tbEdit">编辑</button>
-            <button size="mini" class="btn-center" type="warn" data-id="{{item._id}}" bindtap="tbDelete">删除</button>
+          
+          <view class="card-actions">
+             <view class="switch-wrapper">
+               <text class="switch-label">首页展示</text>
+               <switch checked="{{item.showOnHome}}" bindchange="onHomeSwitchChange" data-id="{{item._id}}" color="#1677ff" style="transform: scale(0.7)"/>
+             </view>
+             <view class="btn-group">
+                <view class="icon-btn edit" bindtap="onEdit" data-id="{{item._id}}">✎</view>
+                <view class="icon-btn delete" bindtap="onDelete" data-id="{{item._id}}">🗑</view>
+             </view>
           </view>
         </view>
       </block>
-      <view wx:if="{{tbList.length===0}}" class="empty">暂无通告</view>
+      <view wx:if="{{list.length === 0}}" class="empty-tip">暂无公告</view>
+    </view>
+
+    <!-- Bulletins List -->
+    <view class="list-container" wx:if="{{subTab==='bulletin'}}">
+      <block wx:for="{{bulletins}}" wx:key="_id">
+        <view class="card">
+           <view class="card-main">
+            <view class="card-header">
+              <text class="card-title">{{item.title}}</text>
+            </view>
+             <view class="card-meta">
+              <text class="meta-date">日期: {{item.date}}</text>
+              <text class="meta-location" wx:if="{{item.location}}">📍 {{item.location}}</text>
+            </view>
+          </view>
+           <view class="card-actions">
+             <view class="switch-wrapper">
+               <text class="switch-label">首页展示</text>
+               <switch checked="{{item.showOnHome}}" bindchange="onTbHomeSwitchChange" data-id="{{item._id}}" color="#1677ff" style="transform: scale(0.7)"/>
+             </view>
+             <view class="btn-group">
+                <view class="icon-btn edit" bindtap="tbEdit" data-item="{{item}}">✎</view>
+                <view class="icon-btn delete" bindtap="tbDelete" data-id="{{item._id}}">🗑</view>
+             </view>
+          </view>
+        </view>
+      </block>
+      <view wx:if="{{bulletins.length === 0}}" class="empty-tip">暂无训练通告</view>
+    </view>
+  </scroll-view>
+
+  <!-- Create/Edit Modal for Announcement -->
+  <view wx:if="{{showCreateForm || editModal.show}}" class="modal-mask" catchtouchmove="true">
+    <view class="modal">
+      <view class="modal-header">
+        <text class="modal-title">{{editModal.show ? '编辑公告' : '新增公告'}}</text>
+        <view class="modal-close" bindtap="{{editModal.show ? 'onEditModalCancel' : 'onToggleCreateForm'}}">×</view>
+      </view>
+      <scroll-view scroll-y class="modal-body">
+        <view class="form-group">
+          <view class="form-item">
+            <text class="label">标题</text>
+            <input class="input" placeholder="请输入标题" value="{{editModal.show ? editModal.title : title}}" bindinput="{{editModal.show ? 'onEditModalInputTitle' : 'onInputTitle'}}"/>
+          </view>
+          <view class="form-item">
+            <text class="label">类型</text>
+            <picker range="{{types}}" value="{{editModal.show ? editModal.typeIndex : typeIndex}}" bindchange="{{editModal.show ? 'onEditModalTypeChange' : 'onTypeChange'}}">
+              <view class="picker">{{types[editModal.show ? editModal.typeIndex : typeIndex]}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">内容</text>
+            <textarea class="textarea" placeholder="请输入内容" value="{{editModal.show ? editModal.content : content}}" bindinput="{{editModal.show ? 'onEditModalInputContent' : 'onInputContent'}}"/>
+          </view>
+          <view class="form-item flex-row">
+            <text class="label">状态 (是否立即发布)</text>
+            <switch checked="{{editModal.show ? editModal.isActive : isActive}}" bindchange="{{editModal.show ? 'onEditModalActiveChange' : 'onActiveChange'}}" color="#1677ff"/>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="modal-footer">
+        <button class="btn secondary" bindtap="{{editModal.show ? 'onEditModalCancel' : 'onToggleCreateForm'}}">取消</button>
+        <button class="btn primary" bindtap="{{editModal.show ? 'onEditModalConfirm' : 'onCreate'}}">确认</button>
+      </view>
     </view>
   </view>
+
+  <!-- Create/Edit Modal for Bulletin -->
+  <view wx:if="{{tbShowCreateForm || tbForm.id}}" class="modal-mask" catchtouchmove="true">
+    <view class="modal">
+      <view class="modal-header">
+        <text class="modal-title">{{tbForm.id ? '编辑通告' : '新增通告'}}</text>
+        <view class="modal-close" bindtap="tbCancel">×</view>
+      </view>
+      <scroll-view scroll-y class="modal-body">
+         <view class="form-group">
+          <view class="form-item">
+            <text class="label">标题</text>
+            <input class="input" placeholder="请输入标题" value="{{tbForm.title}}" bindinput="tbInputTitle"/>
+          </view>
+          <view class="form-item">
+            <text class="label">日期</text>
+            <picker mode="date" value="{{tbForm.date}}" bindchange="tbDateChange">
+               <view class="picker">{{tbForm.date || '选择日期'}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <text class="label">地点</text>
+            <input class="input" placeholder="请输入地点" value="{{tbForm.location}}" bindinput="tbInputLocation"/>
+          </view>
+          <view class="form-item">
+            <text class="label">详细内容</text>
+            <textarea class="textarea" placeholder="请输入详细内容" value="{{tbForm.content}}" bindinput="tbInputContent"/>
+          </view>
+          <view class="form-item flex-row">
+             <text class="label">首页展示</text>
+             <switch checked="{{tbForm.showOnHome}}" bindchange="tbSwitchShowOnHome" color="#1677ff"/>
+          </view>
+         </view>
+      </scroll-view>
+      <view class="modal-footer">
+        <button class="btn secondary" bindtap="tbCancel">取消</button>
+        <button class="btn primary" bindtap="tbSave">确认</button>
+      </view>
+    </view>
+  </view>
+
 </view>

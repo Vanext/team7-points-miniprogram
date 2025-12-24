@@ -8,7 +8,8 @@ Page({
       rank: '-',
       days: 0
     },
-    loading: true
+    loading: true,
+    unreadMsgCount: 0
   },
 
   onLoad() {
@@ -17,6 +18,7 @@ Page({
 
   onShow() {
     this.loadUserData()
+    this.loadUnreadMessages()
   },
 
   async loadUserData() {
@@ -112,6 +114,15 @@ Page({
       this.setData({ loading: false })
       // 不弹窗报错，以免影响未登录用户的体验
     }
+  },
+
+  async loadUnreadMessages() {
+    try {
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const r = await wx.cloud.callFunction({ name: 'messageManager', data: { action: 'getUnreadSummary', query: {} }, config: { env: cloudEnv } })
+      const c = (r && r.result && r.result.success && r.result.data && r.result.data.counts && typeof r.result.data.counts.all === 'number') ? r.result.data.counts.all : 0
+      this.setData({ unreadMsgCount: c })
+    } catch (_) { this.setData({ unreadMsgCount: 0 }) }
   },
 
   login() {

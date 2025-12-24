@@ -72,7 +72,9 @@ exports.main = async (event, context) => {
     const updateData = {
       status,
       auditTime: db.serverDate(),
-      auditorId: openid
+      auditorId: openid,
+      msgIsRead: false,
+      msgReadTime: null
     }
     
     // 如果是拒绝，添加拒绝原因
@@ -93,7 +95,10 @@ exports.main = async (event, context) => {
 
       // 维护训练统计字段（周/月累计时长）
       try {
-        const isTraining = (record.category === 'training') || (record.categoryId === 'training') || (record.formData && record.formData.category === 'training')
+        const isTraining = ['training', 'camp'].includes(record.category) || 
+                          ['training', 'camp'].includes(record.categoryId) || 
+                          (record.formData && ['training', 'camp'].includes(record.formData.category))
+        
         if (isTraining) {
           // 计算训练时长（小时）
           let hours = 0
@@ -185,7 +190,10 @@ exports.main = async (event, context) => {
 
       // 回滚训练统计字段
       try {
-        const isTraining = (record.category === 'training') || (record.categoryId === 'training') || (record.formData && record.formData.category === 'training')
+        const isTraining = ['training', 'camp'].includes(record.category) || 
+                          ['training', 'camp'].includes(record.categoryId) || 
+                          (record.formData && ['training', 'camp'].includes(record.formData.category))
+        
         if (isTraining) {
           let hours = 0
           if (typeof record.selectedHours === 'number' && record.selectedHours > 0) {
@@ -236,31 +244,6 @@ exports.main = async (event, context) => {
     await db.collection('point_records').doc(recordId).update({
       data: updateData
     })
-    
-    // 发送消息通知
-    try {
-      const messageTitle = status === 'approved' ? '积分审核通过' : '积分审核未通过'
-      const messageContent = status === 'approved' 
-        ? `您的积分申请已通过审核，获得 ${record.points} 积分`
-        : `您的积分申请未通过审核${reason ? '，原因：' + reason : ''}`
-      
-      await cloud.callFunction({
-        name: 'messageManager',
-        data: {
-          action: 'create',
-          data: {
-            targetOpenid: record._openid,
-            type: 'audit_result',
-            title: messageTitle,
-            content: messageContent,
-            relatedId: recordId
-          }
-        }
-      })
-    } catch (msgError) {
-      console.error('发送消息通知失败', msgError)
-      // 消息发送失败不影响主流程
-    }
     
     return {
       success: true,

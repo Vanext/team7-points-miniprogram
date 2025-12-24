@@ -42,6 +42,34 @@ Page({
       { value: 32, name: '32mm', description: '超宽公路胎' }
     ],
 
+    // 车胎推荐数据
+    tireTableHeaders: [
+      { key: 'brand', label: '品牌', subLabel: '', width: '180rpx', sortable: false },
+      { key: 'model', label: '型号', subLabel: '', width: '300rpx', sortable: false },
+      { key: 'year', label: '年份', subLabel: '', width: '100rpx', sortable: true },
+      { key: 'type', label: '类型', subLabel: '', width: '140rpx', sortable: false },
+      { key: 'width', label: '胎宽', subLabel: '标称/实测(mm)', width: '200rpx', sortable: false },
+      { key: 'weight', label: '重量', subLabel: '标称/实测(g)', width: '200rpx', sortable: true },
+      { key: 'rollingResistance', label: '滚阻', subLabel: 'Watts', width: '140rpx', sortable: true },
+      { key: 'punctureProtection', label: '防刺', subLabel: '正面(分)', width: '200rpx', sortable: true },
+      { key: 'grip', label: '抓地力', subLabel: '平均(分)', width: '220rpx', sortable: true },
+      { key: 'thickness', label: '胎厚', subLabel: '正面(mm)', width: '200rpx', sortable: false },
+      { key: 'price', label: '价格', subLabel: '等级', width: '160rpx', sortable: true }
+    ],
+    tireRecommendations: [
+      { brand: 'Vittoria', model: 'Corsa Pro Speed TLR 28', year: '2024', type: 'TLR', width: '28 / 28', weight: '250 / 240', rollingResistance: '6.7', punctureProtection: '25', grip: '72', thickness: '1.3', price: 'High+' },
+      { brand: 'Continental', model: 'Grand Prix 5000 TT TR 28', year: '2023', type: 'TLR', width: '28 / 29', weight: '245 / 250', rollingResistance: '8.3', punctureProtection: '33', grip: '66', thickness: '1.9', price: 'High+' },
+      { brand: 'Continental', model: 'Grand Prix 5000 S TR 28', year: '2023', type: 'TLR', width: '28 / 29', weight: '280 / 265', rollingResistance: '9.7', punctureProtection: '34', grip: '70', thickness: '2.1', price: 'High+' },
+      { brand: 'Continental', model: 'Grand Prix 5000 S TR 25', year: '2021', type: 'TLR', width: '25 / 26', weight: '250 / 255', rollingResistance: '10.1', punctureProtection: '36', grip: '66', thickness: '2.3', price: 'High+' },
+      { brand: 'Michelin', model: 'Power Cup TLR 28', year: '2023', type: 'TLR', width: '28 / 29', weight: '285 / 283', rollingResistance: '10.3', punctureProtection: '45', grip: '74', thickness: '2.5', price: 'High' },
+      { brand: 'Continental', model: 'Aero 111 29', year: '2024', type: 'TLR', width: '29 / 28', weight: '285 / 272', rollingResistance: '10.5', punctureProtection: '40', grip: '84', thickness: '2.2', price: 'High+' },
+      { brand: 'Pirelli', model: 'P Zero Race TLR RS SpeedCore 28', year: '2024', type: 'TLR', width: '28 / 28', weight: '290 / 294', rollingResistance: '10.5', punctureProtection: '43', grip: '80', thickness: '2.4', price: 'High+' },
+      { brand: 'Specialized', model: 'S-Works Turbo RapidAir 2Bliss Ready T2/T5 26', year: '2022', type: 'TLR', width: '26 / 26', weight: '230 / 223', rollingResistance: '11.7', punctureProtection: '44', grip: '73', thickness: '1.9', price: 'High+' },
+      { brand: 'Continental', model: 'Grand Prix 5000 25', year: '2018', type: 'TT', width: '25 / 26', weight: '215 / 221', rollingResistance: '12.1', punctureProtection: '49', grip: '67', thickness: '2.8', price: 'High' }
+    ],
+    sortField: '',
+    sortOrder: 'asc', // 'asc' or 'desc'
+
     // 胎压数据表 - 基于轮圈类型、体重和轮胎宽度
     pressureTable: {
       hooked: {
@@ -97,7 +125,6 @@ Page({
       title: '铁人工具'
     });
   },
-  onShow(){ try { const app = getApp(); app.recordVisit('tools', 'pages/tools/tools') } catch (_) {} },
 
   // 分页切换方法
   switchTab: function(e) {
@@ -567,5 +594,64 @@ Page({
     advice += ' 建议定期检查胎压，骑行前确认轮胎状况良好。';
     
     return advice;
+  },
+
+  // 排序功能
+  onSort: function(e) {
+    const key = e.currentTarget.dataset.key;
+    const header = this.data.tireTableHeaders.find(h => h.key === key);
+    
+    if (!header || !header.sortable) return;
+
+    let sortOrder = 'asc';
+    if (this.data.sortField === key) {
+      sortOrder = this.data.sortOrder === 'asc' ? 'desc' : 'asc';
+    }
+
+    const sortedData = [...this.data.tireRecommendations].sort((a, b) => {
+      let valA = a[key];
+      let valB = b[key];
+
+      // 处理包含斜杠的复合数值，默认取第一个数值进行排序
+      if (typeof valA === 'string' && valA.includes('/')) {
+        valA = parseFloat(valA.split('/')[0]);
+      } else if (key === 'price') {
+        // 价格等级特殊处理
+        const priceRank = { 'High+': 2, 'High': 1 };
+        valA = priceRank[valA] || 0;
+      } else {
+        valA = parseFloat(valA);
+      }
+      
+      if (typeof valB === 'string' && valB.includes('/')) {
+        valB = parseFloat(valB.split('/')[0]);
+      } else if (key === 'price') {
+        const priceRank = { 'High+': 2, 'High': 1 };
+        valB = priceRank[valB] || 0;
+      } else {
+        valB = parseFloat(valB);
+      }
+
+      // 如果转换失败（非数字），回退到字符串比较
+      if (isNaN(valA) || isNaN(valB)) {
+        valA = a[key];
+        valB = b[key];
+        return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+
+      return sortOrder === 'asc' ? valA - valB : valB - valA;
+    });
+
+    this.setData({
+      tireRecommendations: sortedData,
+      sortField: key,
+      sortOrder: sortOrder
+    });
+    
+    wx.showToast({
+      title: `按${header.label}${sortOrder === 'asc' ? '升序' : '降序'}排列`,
+      icon: 'none',
+      duration: 1000
+    });
   }
 });

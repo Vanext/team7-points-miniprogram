@@ -1,0 +1,132 @@
+<view class="container" wx:if="{{isAdmin}}">
+  <!-- Header Section -->
+  <view class="header">
+    <view class="title-bar">
+      <text class="page-title">装备&服装发放管理</text>
+      <view class="header-btns">
+        <view class="h-btn" bindtap="exportCsv">导出</view>
+        <view class="h-btn" bindtap="loadList">刷新</view>
+        <view class="h-btn primary" bindtap="addItem">新增</view>
+      </view>
+    </view>
+    
+    <!-- Tabs -->
+    <view class="tabs">
+      <view class="tab {{activeTab==='all'?'active':''}}" data-tab="all" bindtap="onTabChange">全部</view>
+      <view class="tab {{activeTab==='orderedNotShipped'?'active':''}}" data-tab="orderedNotShipped" bindtap="onTabChange">下单未发货</view>
+      <view class="tab {{activeTab==='shipped'?'active':''}}" data-tab="shipped" bindtap="onTabChange">已发货</view>
+    </view>
+  </view>
+
+  <!-- Scrollable List -->
+  <scroll-view scroll-y class="list-scroll">
+    <view class="list-content">
+      <block wx:for="{{groups}}" wx:key="category">
+        <!-- Category Group Header -->
+        <view class="group-header" data-category="{{item.category}}" bindtap="toggleCategory">
+          <view class="gh-left">
+            <text class="gh-title">{{item.category}}</text>
+            <text class="gh-count">{{item.items.length}}</text>
+          </view>
+          <text class="gh-arrow">{{collapsedCategories[item.category] ? '▶' : '▼'}}</text>
+        </view>
+
+        <!-- Cards -->
+        <view class="group-body" hidden="{{collapsedCategories[item.category]}}">
+          <block wx:for="{{item.items}}" wx:key="_id" wx:for-item="row" wx:for-index="subIdx">
+            <view class="card">
+              <!-- Row 1: Name & Mobile -->
+              <view class="c-row compact-row">
+                <view class="form-item flex-3">
+                  <text class="label-mini">姓名</text>
+                  <input class="c-input compact-input" value="{{row.name}}" placeholder="姓名" 
+                    data-id="{{row._id}}" bindblur="onNameBlurById"/>
+                </view>
+                <view class="form-item flex-4">
+                  <text class="label-mini">手机</text>
+                  <input class="c-input compact-input" value="{{row.mobile}}" type="number" placeholder="手机号" 
+                    data-id="{{row._id}}" bindblur="onMobileBlurById"/>
+                </view>
+              </view>
+              
+              <!-- Row 2: Category & Size -->
+              <view class="c-row compact-row">
+                <view class="form-item flex-4">
+                  <text class="label-mini">类别</text>
+                  <view class="cat-wrapper compact-wrapper">
+                    <input class="c-input compact-input" value="{{row.category}}" placeholder="类别" 
+                      data-id="{{row._id}}" bindblur="onCategoryBlurById"/>
+                    <picker mode="selector" range="{{categoryOptions}}" bindchange="onCategoryPickById" data-id="{{row._id}}">
+                      <view class="cat-picker-btn compact-btn">▼</view>
+                    </picker>
+                  </view>
+                </view>
+                
+                <view class="form-item flex-3">
+                  <text class="label-mini">尺码</text>
+                  <view class="cat-wrapper compact-wrapper">
+                    <view class="c-input compact-input size-display">{{(row.gender && row.size) ? (row.gender + row.size) : (row.size || '选尺码')}}</view>
+                    <picker mode="selector" range="{{genderSizeOptions}}" bindchange="onGenderSizePickById" data-id="{{row._id}}">
+                      <view class="cat-picker-btn compact-btn">▼</view>
+                    </picker>
+                  </view>
+                </view>
+              </view>
+
+              <!-- Row 3: Address -->
+              <view class="c-row compact-row">
+                <view class="form-item full-width">
+                  <text class="label-mini">地址</text>
+                  <input class="c-input compact-input" value="{{row.address}}" placeholder="地址" 
+                    data-id="{{row._id}}" bindblur="onAddressBlurById"/>
+                </view>
+              </view>
+              
+              <!-- Row 4: Remark -->
+              <view class="c-row compact-row">
+                <view class="form-item full-width">
+                  <text class="label-mini">备注</text>
+                  <input class="c-input compact-input" value="{{row.remark}}" placeholder="备注信息" 
+                    data-id="{{row._id}}" bindinput="onRemarkInputById" bindblur="onRemarkBlurById"/>
+                </view>
+              </view>
+
+              <!-- Row 5: Actions -->
+              <view class="c-row compact-row bot-row">
+                <view class="toggles compact-toggles">
+                  <view class="tg-item compact-tg" bindtap="onToggleOrderedById" data-id="{{row._id}}" data-val="{{!row.ordered}}">
+                    <view class="tg-label {{row.ordered?'active':''}}">下单</view>
+                    <view class="tg-switch {{row.ordered?'on':''}}"></view>
+                  </view>
+                  <view class="tg-item compact-tg" bindtap="onToggleShippedById" data-id="{{row._id}}" data-val="{{!row.shipped}}">
+                    <view class="tg-label {{row.shipped?'active':''}}">发货</view>
+                    <view class="tg-switch {{row.shipped?'on':''}}"></view>
+                  </view>
+                </view>
+                
+                <view class="actions compact-actions">
+                  <view class="act-btn save compact-btn" data-id="{{row._id}}" bindtap="onSaveRowById">保存</view>
+                  <view class="act-btn del compact-btn" data-id="{{row._id}}" bindtap="removeById">删除</view>
+                </view>
+              </view>
+            </view>
+          </block>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{groups.length === 0}}">暂无数据</view>
+      <view class="bottom-spacer"></view>
+    </view>
+  </scroll-view>
+
+  <!-- Custom Category Modal -->
+  <view class="modal-mask" wx:if="{{showCustomModal}}" bindtap="closeCustomModal">
+    <view class="modal-box" catchtap="true">
+      <view class="modal-title">新增自定义类别</view>
+      <input class="modal-input" placeholder="请输入新类别名称" value="{{customCategoryName}}" bindinput="onCustomCategoryInput" focus="{{showCustomModal}}"/>
+      <view class="modal-btns">
+        <view class="modal-btn cancel" bindtap="closeCustomModal">取消</view>
+        <view class="modal-btn confirm" bindtap="confirmCustomCategory">确定</view>
+      </view>
+    </view>
+  </view>
+</view>

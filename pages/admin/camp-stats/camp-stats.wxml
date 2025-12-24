@@ -1,0 +1,30 @@
+<view class="container">
+  <block wx:if="{{!isAdmin}}">
+    <view class="no-access-card">
+      <view class="no-access-icon">🔒</view>
+      <view class="no-access-title">权限不足</view>
+      <view class="no-access-desc">只有管理员才能访问此页面</view>
+    </view>
+  </block>
+  <block wx:else>
+    <view class="page-header">
+      <text class="page-title">训练营统计</text>
+      <text class="summary-inline">总人数 {{totalCount}}</text>
+      <button class="export-btn" bindtap="onExport" disabled="{{loading || list.length===0}}">导出CSV</button>
+    </view>
+    <view class="grid-container">
+      <block wx:for="{{list}}" wx:key="_openid">
+        <view class="grid-item">
+          <image class="grid-avatar" src="{{item.avatarUrl || '/images/default-avatar.png'}}"></image>
+          <view class="grid-info">
+            <text class="grid-name">{{item.nickName}}</text>
+            <text class="grid-meta">{{item.weeksCompleted}}周｜{{item.avgCompletionRate}}%</text>
+          </view>
+        </view>
+      </block>
+      <view class="empty" wx:if="{{list.length===0 && !loading}}">
+        <text>暂无参与者数据</text>
+      </view>
+    </view>
+  </block>
+</view>

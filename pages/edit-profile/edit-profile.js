@@ -7,6 +7,33 @@ Page({
     tempNickname: '',
     saving: false
   },
+  getFileExt(filePath, fallbackExt = 'jpg') {
+    const m = String(filePath || '').match(/\.([a-zA-Z0-9]+)(?:\?|#|$)/)
+    return (m && m[1] ? m[1] : fallbackExt).toLowerCase()
+  },
+  getFileSizeBytes(filePath) {
+    return new Promise((resolve) => {
+      wx.getFileInfo({
+        filePath,
+        success: (res) => resolve(res && typeof res.size === 'number' ? res.size : 0),
+        fail: () => resolve(0)
+      })
+    })
+  },
+  async compressImageForUpload(filePath) {
+    const originalPath = filePath
+    const size = await this.getFileSizeBytes(originalPath)
+    if (!size || size <= 500 * 1024) return originalPath
+    let quality = 75
+    if (size > 3 * 1024 * 1024) quality = 60
+    else if (size > 1.5 * 1024 * 1024) quality = 70
+    try {
+      const out = await wx.compressImage({ src: originalPath, quality })
+      return (out && out.tempFilePath) || originalPath
+    } catch (_) {
+      return originalPath
+    }
+  },
 
   onLoad() {
     this.loadUserInfo()
@@ -76,12 +103,12 @@ Page({
   },
 
   chooseImage(sourceType) {
-    wx.chooseMedia({
+    wx.chooseImage({
       count: 1,
-      mediaType: ['image'],
       sourceType,
+      sizeType: ['compressed'],
       success: (res) => {
-        const tempFilePath = res.tempFiles[0].tempFilePath
+        const tempFilePath = res.tempFilePaths[0]
         this.uploadAvatar(tempFilePath)
       }
     })
@@ -92,9 +119,10 @@ Page({
     try {
       const user = this.data.userInfo
       if (!user || !user._openid) { app.showToast('用户信息异常', 'error'); return }
-      const fileExtension = tempFilePath.split('.').pop()
+      const uploadPath = await this.compressImageForUpload(tempFilePath)
+      const fileExtension = this.getFileExt(uploadPath, 'jpg')
       const fileName = `t7_images/avatars/${user._openid}_${Date.now()}.${fileExtension}`
-      const uploadResult = await wx.cloud.uploadFile({ cloudPath: fileName, filePath: tempFilePath })
+      const uploadResult = await wx.cloud.uploadFile({ cloudPath: fileName, filePath: uploadPath })
       const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       const db = wx.cloud.database({ env: cloudEnv })
       await db.collection('users').where({ _openid: user._openid }).update({ data: { avatarUrl: uploadResult.fileID } })

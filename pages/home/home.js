@@ -29,9 +29,6 @@ Page({
     this.fetchPartnersFromCloud()
     this.fetchTrainingBulletin()
     this.startAnnAutoScroll()
-    try {
-      wx.cloud.callFunction({ name: 'statisticsManager', data: { action: 'recordVisit', data: { category: 'home', page: 'pages/home/home' } } })
-    } catch (_) {}
     wx.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'] })
   },
 
@@ -66,14 +63,14 @@ Page({
         nickName: '未登录',
         avatarUrl: '/images/default-avatar.png',
         totalPoints: 0,
-        isActivated: false
+        isExchangeActivated: false
       }
 
       if (userRes.success && userRes.data && userRes.data.userInfo) {
         const u = userRes.data.userInfo
         const displayName = u.nickName || u.nickname || u.realName || '微信用户'
         const avatar = u.avatarUrl || '/images/default-avatar.png'
-        userInfo = { ...u, nickName: displayName, avatarUrl: avatar, isActivated: true }
+        userInfo = { ...u, nickName: displayName, avatarUrl: avatar, isExchangeActivated: u.isExchangeActivated === true }
         app.globalData.userInfo = userInfo;
         app.globalData.isAdmin = u.isAdmin === true
         this.setData({ isLoggedIn: true, isAdmin: app.globalData.isAdmin === true })
@@ -240,7 +237,14 @@ Page({
     try {
       const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       const res = await wx.cloud.callFunction({ name: 'statisticsManager', data: { action: 'getPartners' }, config: { env: cloudEnv } })
-      const list = (res.result && res.result.data && res.result.data.list) || []
+      const data = res && res.result && res.result.data
+      let list = (data && Array.isArray(data.list) && data.list) || []
+      if (!list.length && data && data.map && typeof data.map === 'object') {
+        list = Object.keys(data.map).map(k => ({ key: k, fileID: data.map[k] || '', url: '' }))
+      }
+      if (!list.length && data && typeof data === 'object' && !Array.isArray(data)) {
+        list = Object.keys(data).map(k => ({ key: k, fileID: data[k] || '', url: '' }))
+      }
       const partnerKeys = this.data.partnerKeys
       let ordered = partnerKeys.map(k => {
         const found = list.find(it => it.key === k) || { key: k, url: '', fileID: '' }

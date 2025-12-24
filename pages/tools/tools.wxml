@@ -8,7 +8,7 @@
     </view>
     <view class="tab-item {{currentTab === 'tool2' ? 'active' : ''}}" 
           bindtap="switchTab" data-tab="tool2">
-      工具2
+      车胎推荐
     </view>
     <view class="tab-item {{currentTab === 'tool3' ? 'active' : ''}}" 
           bindtap="switchTab" data-tab="tool3">
@@ -210,11 +210,50 @@
   </view>
 
   <!-- 工具2分页 -->
+  <!-- 车胎推荐分页 -->
   <view class="tab-content" wx:if="{{currentTab === 'tool2'}}">
-    <view class="empty-tab">
-      <view class="empty-icon">🔧</view>
-      <view class="empty-title">工具2</view>
-      <view class="empty-subtitle">敬请期待更多实用工具</view>
+    <view class="page-header">
+      <text class="page-title">车胎推荐</text>
+      <text class="page-subtitle">高性能公路车胎数据对比</text>
+    </view>
+    
+    <scroll-view class="table-container" scroll-x="true" enable-flex="true">
+      <view class="tire-table">
+        <!-- 表头 -->
+        <view class="table-header">
+          <view class="th {{item.sortable ? 'sortable' : ''}}" 
+                wx:for="{{tireTableHeaders}}" 
+                wx:key="key" 
+                style="width: {{item.width}}; min-width: {{item.width}}; max-width: {{item.width}};"
+                bindtap="onSort" 
+                data-key="{{item.key}}">
+            <view class="th-content">
+              <view class="th-main">
+                <text>{{item.label}}</text>
+                <text wx:if="{{item.sortable}}" class="sort-icon {{sortField === item.key ? sortOrder : ''}}"></text>
+              </view>
+              <view class="th-sub" wx:if="{{item.subLabel}}">{{item.subLabel}}</view>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 表格内容 -->
+        <view class="table-body">
+          <view class="tr" wx:for="{{tireRecommendations}}" wx:key="model">
+            <view class="td col-{{header.key}}" 
+                  wx:for="{{tireTableHeaders}}" 
+                  wx:for-item="header" 
+                  wx:key="key" 
+                  style="width: {{header.width}}; min-width: {{header.width}}; max-width: {{header.width}};">
+              {{item[header.key]}}
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+    
+    <view class="data-note">
+      <text>* 数据仅供参考，实际表现受路况、胎压等因素影响</text>
     </view>
   </view>
 

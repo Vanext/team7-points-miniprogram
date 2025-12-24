@@ -3,6 +3,10 @@
     <text class="title">第{{week}}周 · 计划 {{plannedHours}} 小时</text>
   </view>
 
+  <view class="tip-box" style="background:#e6f7ff; color:#007aff; padding:16rpx 24rpx; font-size:24rpx; margin: 0 24rpx 16rpx 24rpx; border-radius:8rpx;">
+    💡 提示：同一周仅需在一个地方打卡（普通打卡或训练营打卡），重复打卡不累计训练时间。
+  </view>
+
   <view class="section">
     <text class="label">上传周训练截图</text>
     <view class="images">
@@ -14,14 +18,14 @@
   </view>
 
   <view class="section">
-    <text class="label">识别结果</text>
+    <text class="label">打卡时长</text>
     <view class="result">
       <text class="result-text">本周训练时长：{{actualHours}} 小时（{{actualMinutes}} 分钟）</text>
     </view>
     <view class="input-row">
-      <input style="height: 56rpx; display: block; box-sizing: border-box" class="input hour-input" type="digit" placeholder="小时" value="{{inputHoursStr}}" bindinput="onHoursPartInput"/>
+      <input class="input hour-input" type="digit" placeholder="小时" value="{{inputHoursStr}}" bindinput="onHoursPartInput"/>
       <text class="unit-label">小时</text>
-      <input style="height: 56rpx; display: block; box-sizing: border-box" class="input minute-input" type="digit" placeholder="分" value="{{inputMinutesStr}}" bindinput="onMinutesPartInput"/>
+      <input class="input minute-input" type="digit" placeholder="分" value="{{inputMinutesStr}}" bindinput="onMinutesPartInput"/>
       <text class="unit-label">分</text>
     </view>
     <view class="completion">

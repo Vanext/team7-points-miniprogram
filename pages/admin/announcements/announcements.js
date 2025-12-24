@@ -20,9 +20,20 @@ Page({
       typeIndex: 0
     },
     subTab: 'bulletin',
-    tbList: [],
+    bulletins: [], // 修正变量名为 bulletins 以匹配 WXML
     tbShowCreateForm: false,
-    tbEditing: { id: '', time: '', location: '', content: '', isActive: true, maxParticipants: 0, reminderTemplateId: '' }
+    tbForm: { // 修正变量名为 tbForm 以匹配 WXML
+      id: '', 
+      title: '',
+      date: '',
+      time: '', 
+      location: '', 
+      content: '', 
+      isActive: true, 
+      showOnHome: true, // 默认首页展示
+      maxParticipants: 0, 
+      reminderTemplateId: '' 
+    }
   },
 
   onLoad(options) {
@@ -257,48 +268,167 @@ Page({
     } finally {
       app.hideLoading()
     }
-  }
-  ,
+  },
+
+  // 训练通告首页展示开关
+  async onTbHomeSwitchChange(e) {
+    const id = e.currentTarget.dataset.id
+    const checked = !!(e.detail && e.detail.value)
+    if (!id) return
+    
+    // 乐观更新
+    const bulletins = this.data.bulletins.map(item => {
+      if (item._id === id) return { ...item, showOnHome: checked }
+      return item
+    })
+    this.setData({ bulletins })
+
+    try {
+      // app.showLoading('更新中...') // 乐观更新不显示loading以免闪烁
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const res = await wx.cloud.callFunction({
+        name: 'trainingBulletins',
+        config: { env: cloudEnv },
+        data: {
+          action: 'toggleFeatured',
+          data: { id, value: checked }
+        }
+      })
+      
+      if (!res.result || res.result.success !== true) {
+        throw new Error(res.result?.message || '更新失败')
+      }
+      
+      // app.showToast('已更新')
+      // 通知首页刷新
+      this.notifyHomePageRefresh()
+      
+    } catch (err) {
+      console.error('更新状态失败', err)
+      app.showToast('更新失败', 'error')
+      // 回滚
+      this.loadBulletins()
+    }
+  },
+
+  // Training Bulletin Methods
   async loadBulletins(){
     try{
       const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       const r = await wx.cloud.callFunction({ name: 'trainingBulletins', config: { env: cloudEnv }, data: { action: 'list' } })
       const list = (r.result && r.result.success) ? (r.result.data || []) : []
-      this.setData({ tbList: list })
-    }catch(_){
-      this.setData({ tbList: [] })
+      console.log('Training Bulletins Loaded:', list)
+      // 确保日期格式化
+      const formattedList = list.map(item => ({
+        ...item,
+        date: item.date || item.time || '', // 兼容旧字段
+        showOnHome: item.showOnHome !== false // 默认为true，除非明确为false
+      }))
+      this.setData({ bulletins: formattedList }) 
+    }catch(err){
+      console.error('加载训练通告失败', err)
+      app.showToast('加载失败', 'error')
+      this.setData({ bulletins: [] })
     }
   },
+
   tbEdit(e){
     const item = e.currentTarget.dataset.item
     if (!item) return
-    this.setData({ tbEditing: { id: item._id, time: item.time || '', location: item.location || '', content: item.content || '', isActive: !!item.isActive, maxParticipants: item.maxParticipants || 0, reminderTemplateId: item.reminderTemplateId || '' }, tbShowCreateForm: true })
+    this.setData({ 
+      tbForm: { // 修正为 tbForm
+        id: item._id, 
+        title: item.title || '', 
+        date: item.date || item.time || '', // 兼容旧字段
+        location: item.location || '', 
+        content: item.content || '', 
+        isActive: !!item.isActive, 
+        showOnHome: item.showOnHome !== false,
+        maxParticipants: item.maxParticipants || 0, 
+        reminderTemplateId: item.reminderTemplateId || '' 
+      }, 
+      tbShowCreateForm: true 
+    })
   },
-  tbBindInput(e){
-    const key = e.currentTarget.dataset.key
-    const val = e.detail.value
-    const ed = this.data.tbEditing
-    ed[key] = val
-    this.setData({ tbEditing: ed })
+
+  // Input Handlers
+  tbInputTitle(e) {
+    this.setData({ 'tbForm.title': e.detail.value })
   },
-  tbToggleActive(){
-    const ed = this.data.tbEditing
-    ed.isActive = !ed.isActive
-    this.setData({ tbEditing: ed })
+  tbDateChange(e) {
+    this.setData({ 'tbForm.date': e.detail.value })
   },
+  tbInputLocation(e) {
+    this.setData({ 'tbForm.location': e.detail.value })
+  },
+  tbInputContent(e) {
+    this.setData({ 'tbForm.content': e.detail.value })
+  },
+  tbSwitchShowOnHome(e) {
+    this.setData({ 'tbForm.showOnHome': e.detail.value })
+  },
+  
   tbToggleCreateForm(){
-    this.setData({ tbShowCreateForm: !this.data.tbShowCreateForm })
+    this.tbNew()
   },
+  
+  tbNew(){
+    this.setData({ 
+      tbForm: { id: '', title: '', date: '', location: '', content: '', isActive: true, showOnHome: true, maxParticipants: 0, reminderTemplateId: '' }, 
+      tbShowCreateForm: true 
+    })
+  },
+  
+  tbCancel(){
+    this.setData({ 
+      tbForm: { id: '', title: '', date: '', location: '', content: '', isActive: true, showOnHome: true, maxParticipants: 0, reminderTemplateId: '' }, 
+      tbShowCreateForm: false 
+    })
+  },
+
   async tbSave(){
     const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-    const ed = this.data.tbEditing
+    const form = this.data.tbForm
+    
+    if (!form.title || !form.date) {
+      app.showToast('请填写标题和日期', 'error')
+      return
+    }
+
     app.showLoading('保存中...')
     try{
-      const r = await wx.cloud.callFunction({ name: 'trainingBulletins', config: { env: cloudEnv }, data: { action: 'upsert', data: { id: ed.id, time: ed.time, location: ed.location, content: ed.content, isActive: ed.isActive, maxParticipants: Number(ed.maxParticipants || 0), reminderTemplateId: ed.reminderTemplateId } } })
+      const data = {
+        title: form.title,
+        date: form.date, // 统一使用 date
+        time: form.date, // 兼容旧字段
+        location: form.location,
+        content: form.content,
+        isActive: form.isActive,
+        showOnHome: form.showOnHome,
+        maxParticipants: Number(form.maxParticipants || 0),
+        reminderTemplateId: form.reminderTemplateId
+      }
+      
+      // 如果有ID则是更新，否则是新增
+      if (form.id) {
+        data.id = form.id
+      }
+
+      const r = await wx.cloud.callFunction({ 
+        name: 'trainingBulletins', 
+        config: { env: cloudEnv }, 
+        data: { 
+          action: 'upsert', 
+          data: data 
+        } 
+      })
+
       if (r.result && r.result.success){
-        this.setData({ tbEditing: { id: '', time: '', location: '', content: '', isActive: true, maxParticipants: 0, reminderTemplateId: '' }, tbShowCreateForm: false })
+        this.tbCancel()
         await this.loadBulletins()
         app.showToast('已保存')
+        // 通知首页刷新
+        this.notifyHomePageRefresh()
       } else {
         app.showToast((r.result && r.result.message) || '保存失败','error')
       }
@@ -309,12 +439,7 @@ Page({
       app.hideLoading()
     }
   },
-  tbNew(){
-    this.setData({ tbEditing: { id: '', time: '', location: '', content: '', isActive: true, maxParticipants: 0, reminderTemplateId: '' }, tbShowCreateForm: true })
-  },
-  tbCancel(){
-    this.setData({ tbEditing: { id: '', time: '', location: '', content: '', isActive: true, maxParticipants: 0, reminderTemplateId: '' }, tbShowCreateForm: false })
-  },
+
   async tbDelete(e){
     const id = e.currentTarget.dataset.id
     if (!id) return
@@ -338,22 +463,4 @@ Page({
       }
     })
   },
-  async tbToggleHome(e){
-    const id = e.currentTarget.dataset.id
-    const value = !!(e.detail && e.detail.value)
-    if (!id) return
-    try{
-      app.showLoading('更新首页展示...')
-      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
-      const r = await wx.cloud.callFunction({ name: 'trainingBulletins', config: { env: cloudEnv }, data: { action: 'toggleFeatured', data: { id, value } } })
-      if (!r.result || r.result.success !== true) throw new Error('更新失败')
-      await this.loadBulletins()
-      app.showToast('已更新')
-    }catch(err){
-      app.showToast(err.message || '更新失败','error')
-      this.loadBulletins()
-    }finally{
-      app.hideLoading()
-    }
-  }
 });

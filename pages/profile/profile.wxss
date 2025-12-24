@@ -116,6 +116,20 @@
   font-size: 30rpx;
 }
 
+.badge {
+  min-width: 36rpx;
+  height: 36rpx;
+  padding: 0 10rpx;
+  margin-left: 12rpx;
+  background: #f44336;
+  color: #fff;
+  border-radius: 18rpx;
+  font-size: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Footer */
 .footer {
   text-align: center;

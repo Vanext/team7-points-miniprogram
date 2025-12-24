@@ -44,6 +44,11 @@
           <text class="overview-label">总消费积分</text>
           <text class="overview-icon">💰</text>
         </view>
+        <view class="overview-item" bindtap="goToApparelManagement">
+          <text class="overview-number">{{summary.totalUsers}}</text>
+          <text class="overview-label">服装发放</text>
+          <text class="overview-icon">👕</text>
+        </view>
       </view>
     </view>
 

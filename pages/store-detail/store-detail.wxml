@@ -1,7 +1,14 @@
 <!--pages/store-detail/store-detail.wxml-->
 <view class="container">
   <view class="product-header" wx:if="{{product}}">
-    <image class="product-image" src="{{product.image}}" mode="aspectFill"></image>
+    <swiper class="product-swiper" circular="true" autoplay="{{productImages.length > 1}}" interval="4500" indicator-dots="{{productImages.length > 1}}" wx:if="{{productImages.length > 0}}">
+      <block wx:for="{{productImages}}" wx:key="*this">
+        <swiper-item>
+          <image class="product-image" src="{{item}}" mode="aspectFill"></image>
+        </swiper-item>
+      </block>
+    </swiper>
+    <image class="product-image" src="{{product.image || '/images/default-image.png'}}" mode="aspectFill" wx:else></image>
     <view class="product-info">
       <text class="product-name">{{product.name}}</text>
       <text class="product-desc">{{product.description || '—'}}</text>
@@ -95,6 +102,12 @@
     </block>
     <block wx:else>
       <button class="exchange-btn" type="primary" bindtap="onExchange">{{exchangeBtnText}}</button>
+    </block>
+  </view>
+
+  <view class="detail-images" wx:if="{{productExtraImages.length > 0}}">
+    <block wx:for="{{productExtraImages}}" wx:key="*this">
+      <image class="detail-image" src="{{item}}" mode="widthFix"></image>
     </block>
   </view>
 </view>

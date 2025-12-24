@@ -1,35 +1,47 @@
 <!--pages/exchange-history/exchange-history.wxml-->
 <view class="container">
-  <view class="history-list">
+  <scroll-view scroll-y class="history-scroll" bindscrolltolower="loadHistory" enable-flex>
     <block wx:if="{{!isLoading && !isEmpty}}">
-      <view class="history-item" wx:for="{{history}}" wx:key="_id">
-        <view class="item-info">
-          <text class="product-name">{{item.productName}}</text>
-          <text class="exchange-date">{{item.exchangeDate}}</text>
-          <text class="status-badge">{{item.displayStatus}}</text>
+      <view class="order-card" wx:for="{{history}}" wx:key="_id">
+        <!-- 头部：日期与状态 -->
+        <view class="order-header">
+          <text class="order-date">兑换时间: {{item.exchangeDate}}</text>
+          <text class="order-status {{item.status}}">{{item.displayStatus}}</text>
         </view>
-        <view class="item-points">
-          <text class="points-spent">{{item.displayPointsSpent}}</text>
+        
+        <!-- 内容：商品信息与花费 -->
+        <view class="order-body">
+          <view class="order-info">
+            <text class="order-name">{{item.productName}}</text>
+            <text class="order-spec" wx:if="{{item.selectedSize}}">规格: {{item.selectedSize}}</text>
+          </view>
+          <view class="order-cost">
+            <text class="cost-val">{{item.displayPointsSpent}}</text>
+            <text class="cost-label">积分</text>
+          </view>
         </view>
-        <view class="item-extra" wx:if="{{item.selectedSize}}">
-          <text>尺码：{{item.selectedSize}}</text>
-        </view>
-        <view class="item-actions">
-          <button class="btn" size="mini" wx:if="{{item.status === 'pending'}}" bindtap="onCancel" data-id="{{item._id}}">取消兑换</button>
+
+        <!-- 底部：操作按钮 -->
+        <view class="order-footer" wx:if="{{item.status === 'pending'}}">
+          <button class="btn-cancel" hover-class="btn-hover" bindtap="onCancel" data-id="{{item._id}}">取消兑换</button>
         </view>
       </view>
     </block>
 
-    <view class="loading-container" wx:if="{{isLoading}}">
+    <!-- 加载与空状态 -->
+    <view class="loading-state" wx:if="{{isLoading}}">
       <text>加载中...</text>
     </view>
-
-    <view class="empty-container" wx:if="{{!isLoading && isEmpty}}">
+    
+    <view class="empty-state" wx:if="{{!isLoading && isEmpty}}">
       <text>暂无兑换记录</text>
     </view>
-  </view>
-
-  <view class="load-more" wx:if="{{!isLoading && hasMore}}" bindtap="loadHistory">
-    <text>加载更多</text>
-  </view>
+    
+    <view class="list-footer" wx:if="{{!isLoading && hasMore && !isEmpty}}">
+       <text>上拉加载更多</text>
+    </view>
+    <view class="list-footer" wx:if="{{!isLoading && !hasMore && !isEmpty}}">
+       <text>—— 已加载全部 ——</text>
+    </view>
+  </scroll-view>
 </view>

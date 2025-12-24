@@ -1,153 +1,129 @@
 /* pages/edit-profile/edit-profile.wxss */
 .container {
-  padding: 20rpx;
-  background-color: #f5f5f5;
   min-height: 100vh;
+  background-color: #f7f8fa;
+  padding: 24rpx;
+  padding-bottom: 140rpx; /* Space for footer */
+  box-sizing: border-box;
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: 30rpx;
-}
-
-.page-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.card {
-  background-color: #fff;
+.form-card {
+  background: #fff;
   border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  padding: 0 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.02);
 }
 
-.section-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20rpx;
-}
-
-/* 头像编辑区域 */
-.avatar-section {
-  text-align: center;
-}
-
-.avatar-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20rpx;
-}
-
-.avatar {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 50%;
-  border: 4rpx solid #e0e0e0;
-}
-
-.avatar-actions {
-  margin-top: 10rpx;
-}
-
-/* 昵称编辑区域 */
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-}
-
-.input-field {
-  padding: 20rpx;
-  border: 2rpx solid #e0e0e0;
-  border-radius: 8rpx;
+.card-title {
   font-size: 28rpx;
-  background-color: #fff;
+  font-weight: 600;
+  color: #333;
+  padding: 24rpx 0 12rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+  margin-bottom: 8rpx;
 }
 
-.input-field:focus {
-  border-color: #007aff;
-}
-
-.input-hint {
-  font-size: 24rpx;
-  color: #999;
-  margin-left: 10rpx;
-}
-
-/* 信息显示区域 */
-.info-item {
+.form-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid #f9f9f9;
 }
 
-.info-item:last-child {
+.form-item:last-child {
   border-bottom: none;
 }
 
-.info-label {
+.label {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+  background: #eee;
+}
+
+.arrow {
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+.input {
+  text-align: right;
+  font-size: 28rpx;
+  color: #333;
+  width: 400rpx;
+}
+
+.value {
   font-size: 28rpx;
   color: #666;
 }
 
-.info-value {
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
+.value.highlight {
+  color: #1677ff;
+  font-weight: bold;
+  font-size: 32rpx;
 }
 
-.admin-badge {
-  background-color: #ff6b6b;
-  color: #fff;
+.badge-admin {
+  background: #e6f7ff;
+  color: #1677ff;
+  font-size: 22rpx;
   padding: 4rpx 12rpx;
-  border-radius: 12rpx;
-  font-size: 24rpx;
+  border-radius: 8rpx;
 }
 
-/* 操作按钮 */
-.actions {
-  margin-top: 40rpx;
+.tips {
+  font-size: 24rpx;
+  color: #999;
+  padding: 0 16rpx;
+  line-height: 1.5;
+}
+
+/* Footer Bar */
+.footer-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   display: flex;
-  flex-direction: column;
-  gap: 20rpx;
+  box-shadow: 0 -2rpx 12rpx rgba(0,0,0,0.05);
+  z-index: 100;
 }
 
 .btn {
-  padding: 24rpx;
-  border-radius: 12rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  text-align: center;
-  border: none;
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  margin: 0 12rpx;
+}
+
+.btn::after { border: none; }
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #666;
 }
 
 .btn-primary {
-  background-color: #007aff;
+  background: #1677ff;
   color: #fff;
-}
-
-.btn-primary:active {
-  background-color: #0056cc;
-}
-
-.btn-outline {
-  background-color: transparent;
-  color: #007aff;
-  border: 2rpx solid #007aff;
-}
-
-.btn-outline:active {
-  background-color: #f0f8ff;
-}
-
-/* 加载状态 */
-.btn[loading] {
-  opacity: 0.6;
 }

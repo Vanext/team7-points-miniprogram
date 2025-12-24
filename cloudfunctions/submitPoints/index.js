@@ -118,7 +118,48 @@ exports.main = async (event, context) => {
       return { recordId: addRes._id }
     })
     
-    // 5. 检查是否需要自动解锁（如果是铁人三项赛相关且已审核通过）
+    // 5. 训练营进度自动解锁与推进（提交后立即解锁下一周，并将下一周作为“当前训练周”）
+    try {
+      if (event.camp_id && event.week_num) {
+        // 确保进度集合存在
+        try { await db.createCollection('camp_user_progress') } catch (_) {}
+        // 查询训练营总周数
+        const planRes = await db.collection('camp_plans').where({ camp_id: event.camp_id }).limit(1).get()
+        const totalWeeks = (planRes.data[0] && planRes.data[0].total_weeks) ? planRes.data[0].total_weeks : 13
+        // 计算下一周并推进解锁
+        const nextWeek = Math.min(totalWeeks, Number(event.week_num) + 1)
+        // 读取现有进度
+        const progRes = await db.collection('camp_user_progress').where({ _openid: openid, camp_id: event.camp_id }).limit(1).get()
+        const now = db.serverDate()
+        if (progRes.data && progRes.data.length > 0) {
+          const docId = progRes.data[0]._id
+          const prevUnlocked = Number(progRes.data[0].unlocked_week || 1)
+          const newUnlocked = Math.max(prevUnlocked, nextWeek)
+          await db.collection('camp_user_progress').doc(docId).update({
+            data: {
+              unlocked_week: newUnlocked,
+              current_week: newUnlocked,
+              updatedAt: now
+            }
+          })
+        } else {
+          await db.collection('camp_user_progress').add({
+            data: {
+              _openid: openid,
+              camp_id: event.camp_id,
+              unlocked_week: nextWeek,
+              current_week: nextWeek,
+              createdAt: now,
+              updatedAt: now
+            }
+          })
+        }
+      }
+    } catch (e) {
+      console.log('训练营自动解锁推进失败（不影响提交）', e)
+    }
+    
+    // 6. 检查是否需要自动解锁（如果是铁人三项赛相关且已审核通过）
     // 完善当年参赛判定：当年时间范围（1月1-12月31）、参加铁人三项赛（只要是铁人三项赛都可以，距离不论）
     // 判断数据来源：会员上传的参赛获取积分的动作，已经通过并获得积分的比赛打卡
     // 使用表单内的比赛类型字段来识别是否为铁三类比赛

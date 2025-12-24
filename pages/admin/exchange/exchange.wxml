@@ -1,53 +1,113 @@
 <view class="container">
-  <view class="page-title">兑换处理</view>
-
-  <view class="tabs">
-    <view class="tab {{status==='pending'?'active':''}}" data-status="pending" bindtap="onTab">待处理</view>
-    <view class="tab {{status==='shipped'?'active':''}}" data-status="shipped" bindtap="onTab">已发货</view>
-    <view class="tab {{status==='completed'?'active':''}}" data-status="completed" bindtap="onTab">已完成</view>
-    <view class="tab {{status==='all'?'active':''}}" data-status="all" bindtap="onTab">全部</view>
-  </view>
-
-  <view class="card">
-    <block wx:for="{{list}}" wx:key="_id">
-      <view class="item">
-        <view class="row">
-          <text class="name">{{item.productName}}</text>
-          <text class="badge {{item.status}}">{{item.displayStatus}}</text>
-        </view>
-        <view class="row meta">
-          <text>数量：{{item.quantity}}</text>
-          <text>积分：{{item.pointsSpent}}</text>
-          <text>用户：{{item.userNickName || item._openid}}</text>
-        </view>
-        <view class="row">
-          <text>方式：{{item.recipient.method === 'mail' ? '邮寄' : '当面'}}</text>
-          <text class="copyable" data-type="recipient" data-content="{{item.recipient.name}}（{{item.recipient.phone}}）" bindtap="onCopy">收件人：{{item.recipient.name}}（{{item.recipient.phone}}）</text>
-        </view>
-        <view class="row" wx:if="{{item.selectedSize}}">
-          <text>尺码：{{item.selectedSize}}</text>
-        </view>
-        <view class="row" wx:if="{{item.recipient.method==='mail'}}">
-          <text class="copyable" data-type="address" data-content="{{item.recipient.address}}" bindtap="onCopy">地址：{{item.recipient.address}}</text>
-        </view>
-        <view class="row" wx:if="{{item.recipient.remark}}">
-          <text>备注：{{item.recipient.remark}}</text>
-        </view>
-
-        <view class="actions" wx:if="{{status==='pending'}}">
-          <button class="btn btn-primary" bindtap="onShip" data-id="{{item._id}}">标记发货</button>
-          <button class="btn btn-success" bindtap="onConfirmDone" data-id="{{item._id}}">当面完成</button>
-          <button class="btn btn-danger" bindtap="onCancel" data-id="{{item._id}}">取消申请</button>
-        </view>
-        <view class="actions" wx:if="{{status==='shipped'}}">
-          <button class="btn btn-success" bindtap="onConfirmDone" data-id="{{item._id}}">确认完成</button>
-        </view>
-        <view class="row" wx:if="{{item.status==='shipped' && item.logistics && (item.logistics.company || item.logistics.trackingNumber)}}">
-          <text>物流公司：{{item.logistics.company || '—'}}</text>
-          <text style="margin-left: 16rpx;">单号：{{item.logistics.trackingNumber || '—'}}</text>
-        </view>
+  <!-- 标签页 -->
+  <view class="tabs-container">
+    <view class="tabs">
+      <view class="tab {{status==='pending'?'active':''}}" data-status="pending" bindtap="onTab">
+        <text class="tab-text">待处理</text>
+        <view class="tab-indicator" wx:if="{{status==='pending'}}"></view>
       </view>
-    </block>
-    <view wx:if="{{list.length===0}}" class="empty">暂无记录</view>
+      <view class="tab {{status==='shipped'?'active':''}}" data-status="shipped" bindtap="onTab">
+        <text class="tab-text">已发货</text>
+        <view class="tab-indicator" wx:if="{{status==='shipped'}}"></view>
+      </view>
+      <view class="tab {{status==='completed'?'active':''}}" data-status="completed" bindtap="onTab">
+        <text class="tab-text">已完成</text>
+        <view class="tab-indicator" wx:if="{{status==='completed'}}"></view>
+      </view>
+      <view class="tab {{status==='all'?'active':''}}" data-status="all" bindtap="onTab">
+        <text class="tab-text">全部</text>
+        <view class="tab-indicator" wx:if="{{status==='all'}}"></view>
+      </view>
+    </view>
   </view>
+
+  <!-- 记录列表 -->
+  <scroll-view scroll-y class="records-scroll" enable-back-to-top>
+    <view class="records-list">
+      <block wx:if="{{list.length > 0}}">
+        <view wx:for="{{list}}" wx:key="_id" class="record-card">
+          <!-- 主要内容区域：左侧信息 + 右侧图片(可选) -->
+          <view class="card-main">
+            <!-- 左侧信息区 -->
+            <view class="card-info">
+              <!-- 顶部：商品名 -->
+              <view class="info-header">
+                <text class="name">{{item.productName}}</text>
+                <text class="count-badge">x{{item.quantity}}</text>
+              </view>
+
+              <!-- 用户信息 -->
+              <view class="user-meta">
+                <text class="user-name">用户：{{item.userNickName || item._openid}}</text>
+                <text class="points-cost">-{{item.pointsSpent}}积分</text>
+              </view>
+
+              <!-- 配送信息 -->
+              <view class="info-desc">
+                <view class="desc-row">
+                  <text class="label">方式：</text>
+                  <text class="value">{{item.recipient.method === 'mail' ? '邮寄' : '当面'}}</text>
+                </view>
+                <view class="desc-row" wx:if="{{item.selectedSize}}">
+                  <text class="label">尺码：</text>
+                  <text class="value">{{item.selectedSize}}</text>
+                </view>
+                <view class="desc-row" catchtap="onCopy" data-type="recipient" data-content="{{item.recipient.name}}（{{item.recipient.phone}}）">
+                  <text class="label">收件：</text>
+                  <text class="value copyable">{{item.recipient.name}} {{item.recipient.phone}}</text>
+                </view>
+                <view class="desc-row" wx:if="{{item.recipient.method==='mail'}}" catchtap="onCopy" data-type="address" data-content="{{item.recipient.address}}">
+                  <text class="label">地址：</text>
+                  <text class="value copyable address-text">{{item.recipient.address}}</text>
+                </view>
+                <view class="desc-row" wx:if="{{item.recipient.remark}}">
+                  <text class="label">备注：</text>
+                  <text class="value">{{item.recipient.remark}}</text>
+                </view>
+                <view class="desc-row logistics" wx:if="{{item.status==='shipped' && item.logistics && (item.logistics.company || item.logistics.trackingNumber)}}">
+                  <text class="label">物流：</text>
+                  <text class="value">{{item.logistics.company}} {{item.logistics.trackingNumber}}</text>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 右侧图片占位 (如果商品有图可以在此展示，目前暂无商品图字段，保留结构) -->
+            <!-- <view class="card-media" wx:if="{{item.thumb}}">
+              <image src="{{item.thumb}}" mode="aspectFill" class="media-img"></image>
+            </view> -->
+          </view>
+
+          <!-- 底部操作栏 -->
+          <view class="card-actions">
+            <!-- 状态标签 -->
+            <view class="status-tag {{item.status}}">
+              <block wx:if="{{item.status === 'pending'}}"><text class="icon">⏳</text> 待处理</block>
+              <block wx:elif="{{item.status === 'shipped'}}"><text class="icon">🚚</text> 已发货</block>
+              <block wx:elif="{{item.status === 'completed'}}"><text class="icon">✓</text> 已完成</block>
+              <block wx:elif="{{item.status === 'cancelled'}}"><text class="icon">✕</text> 已取消</block>
+              <block wx:else>{{item.displayStatus}}</block>
+            </view>
+            
+            <view class="spacer"></view>
+
+            <!-- 操作按钮 -->
+            <view class="btn-group">
+              <block wx:if="{{status==='pending' && item.status==='pending'}}">
+                <view class="action-btn secondary" catchtap="onCancel" data-id="{{item._id}}">取消</view>
+                <view class="action-btn primary" catchtap="onShip" data-id="{{item._id}}">发货</view>
+                <view class="action-btn success" catchtap="onConfirmDone" data-id="{{item._id}}">当面完成</view>
+              </block>
+              <block wx:if="{{status==='shipped' && item.status==='shipped'}}">
+                <view class="action-btn success" catchtap="onConfirmDone" data-id="{{item._id}}">确认完成</view>
+              </block>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <view class="empty-state" wx:elif="{{list.length===0}}">
+        <text>暂无记录</text>
+      </view>
+    </view>
+  </scroll-view>
 </view>

@@ -93,13 +93,32 @@ exports.main = async (event, context) => {
     
     const maxCompleted = completedWeeks.length ? Math.max.apply(null, completedWeeks) : 0
     const baseline = 2
-    const unlockedWeek = Math.min(campPlan.total_weeks, Math.max(baseline, currentWeek, maxCompleted + 1))
+    let unlockedWeek = Math.min(campPlan.total_weeks, Math.max(baseline, currentWeek, maxCompleted + 1))
+    // 6. 读取用户进度（提交后立即解锁的下一周与当前周）
+    // 默认逻辑：如果用户完成进度超过日历周，优先展示完成进度的下一周
+    let currentWeekDisplay = Math.min(campPlan.total_weeks, Math.max(currentWeek, maxCompleted + 1))
+    
+    try {
+      const progRes = await db.collection('camp_user_progress').where({
+        _openid: effectiveOpenId,
+        camp_id: campPlan.camp_id
+      }).limit(1).get()
+      if (progRes.data && progRes.data.length > 0) {
+        const p = progRes.data[0]
+        if (typeof p.unlocked_week === 'number') {
+          unlockedWeek = Math.min(campPlan.total_weeks, Math.max(unlockedWeek, p.unlocked_week))
+        }
+        if (typeof p.current_week === 'number') {
+          currentWeekDisplay = Math.min(campPlan.total_weeks, Math.max(currentWeekDisplay, p.current_week))
+        }
+      }
+    } catch (_) {}
 
     return {
       success: true,
       campPlan: campPlan,
       userProgress: {
-        current_week: currentWeek,
+        current_week: currentWeekDisplay,
         completed_weeks: completedWeeks,
         total_weeks_completed: totalWeeksCompleted,
         total_weeks: campPlan.total_weeks,

@@ -10,7 +10,7 @@ Page({
     showRulesModal: false,
     
     // Match Data
-    matchTypes: ['大铁', '70.3', '标铁', '半程马拉松', '远距赛事'],
+    matchTypes: ['大铁', '70.3', '标铁', '路跑赛事（半程以上）'],
     selectedMatchType: '',
     isPodium: false,
     
@@ -103,25 +103,65 @@ Page({
     this.setData({ selectedConstructionType: this.data.constructionTypes[e.detail.value] })
   },
 
+  getFileExt(filePath, fallbackExt = 'jpg') {
+    const m = String(filePath || '').match(/\.([a-zA-Z0-9]+)(?:\?|#|$)/)
+    return (m && m[1] ? m[1] : fallbackExt).toLowerCase()
+  },
+
+  getFileSizeBytes(filePath) {
+    return new Promise((resolve) => {
+      wx.getFileInfo({
+        filePath,
+        success: (res) => resolve(res && typeof res.size === 'number' ? res.size : 0),
+        fail: () => resolve(0)
+      })
+    })
+  },
+
+  async compressImageForUpload(filePath) {
+    const originalPath = filePath
+    const size = await this.getFileSizeBytes(originalPath)
+    if (!size || size <= 700 * 1024) return originalPath
+
+    let quality = 75
+    if (size > 5 * 1024 * 1024) quality = 55
+    else if (size > 2 * 1024 * 1024) quality = 65
+
+    try {
+      const out = await wx.compressImage({ src: originalPath, quality })
+      const compressedPath = (out && out.tempFilePath) || originalPath
+      const after = await this.getFileSizeBytes(compressedPath)
+      if (after && after > 2 * 1024 * 1024 && quality > 55) {
+        const out2 = await wx.compressImage({ src: compressedPath, quality: Math.max(45, quality - 10) })
+        return (out2 && out2.tempFilePath) || compressedPath
+      }
+      return compressedPath
+    } catch (_) {
+      return originalPath
+    }
+  },
+
   // Image Upload
   chooseImage() {
     const remain = Math.max(0, 3 - (this.data.imageUrls.length || 0))
     if (remain <= 0) { wx.showToast({ title: '最多上传3张', icon: 'none' }); return }
-    wx.chooseMedia({
+    wx.chooseImage({
       count: remain,
-      mediaType: ['image'],
+      sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
       success: async (res) => {
-        const files = res.tempFiles || []
+        const files = res.tempFilePaths || []
         if (!files.length) return
         wx.showLoading({ title: '上传图片中...' })
         try {
           const urls = (this.data.imageUrls || []).slice()
           const ids = (this.data.fileIds || []).slice()
           for (let i = 0; i < files.length; i++) {
-            const tempFilePath = files[i].tempFilePath
-            const cloudPath = `uploads/${Date.now()}-${Math.floor(Math.random() * 100000)}-${i}.jpg`
-            const uploadRes = await wx.cloud.uploadFile({ cloudPath, filePath: tempFilePath })
+            const tempFilePath = files[i]
+            const uploadPath = await this.compressImageForUpload(tempFilePath)
+            const ext = this.getFileExt(uploadPath, 'jpg')
+            const cloudPath = `uploads/${Date.now()}-${Math.floor(Math.random() * 100000)}-${i}.${ext}`
+            const uploadRes = await wx.cloud.uploadFile({ cloudPath, filePath: uploadPath })
             urls.push(tempFilePath)
             ids.push(uploadRes.fileID)
           }
@@ -164,13 +204,12 @@ Page({
         images: fileIds
       }
       
-      // Calculate points (Mock logic based on rules)
+      // Calculate points (based on rules)
       const pointMap = {
-        '大铁': 1200,
-        '70.3': 600,
+        '大铁': 1500,
+        '70.3': 700,
         '标铁': 300,
-        '半程马拉松': 300,
-        '远距赛事': 100
+        '路跑赛事（半程以上）': 100
       }
       points = pointMap[selectedMatchType] || 0
       if (isPodium) points += 200

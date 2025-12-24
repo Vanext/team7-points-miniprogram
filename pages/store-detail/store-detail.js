@@ -1,5 +1,6 @@
 // pages/store-detail/store-detail.js
 const app = getApp();
+const imageUtils = require('../../utils/imageUtils.js')
     const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8';
     const db = wx.cloud.database({
       env: cloudEnv
@@ -9,6 +10,8 @@ Page({
   data: {
     productId: '',
     product: null,
+    productImages: [],
+    productExtraImages: [],
     userInfo: null,
     canExchange: false,
     exchangeBtnText: '立即兑换',
@@ -62,13 +65,14 @@ Page({
 
       if (!product) throw new Error('商品不存在或已下架');
       
-      // 将 cloud:// 文件ID 转为临时URL
       try {
-        if (product.image && typeof product.image === 'string' && product.image.indexOf('cloud://') === 0) {
-          const r = await wx.cloud.getTempFileURL({ fileList: [product.image] })
-          const f = (r && r.fileList && r.fileList[0] && r.fileList[0].tempFileURL) || ''
-          if (f) product = { ...product, image: f }
-        }
+        const rawImages = Array.isArray(product.images) ? product.images.filter(Boolean).slice(0, 7) : []
+        const rawImage = typeof product.image === 'string' ? product.image : ''
+        const images = rawImages.length ? rawImages : (rawImage ? [rawImage] : [])
+        const processedImages = (await imageUtils.processImageUrls(images, '/images/default-image.png')).filter(u => u && u.trim() !== '')
+        const displayImages = processedImages.length ? processedImages : (images.length ? images : ['/images/default-image.png'])
+        product = { ...product, images: images, image: displayImages[0] }
+        this.setData({ productImages: displayImages, productExtraImages: displayImages.slice(1) })
       } catch (_) {}
       
       this.setData({ product });
@@ -100,21 +104,39 @@ Page({
       return;
     }
     // 会员资格校验（前端提示）
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const paidYears = Array.isArray(userInfo.membershipPaidYears) ? userInfo.membershipPaidYears : [];
+    const toTs = (v) => {
+      if (!v) return 0
+      if (v instanceof Date) return v.getTime()
+      if (typeof v === 'number') return v
+      if (typeof v === 'string') {
+        const t = new Date(v).getTime()
+        return Number.isFinite(t) ? t : 0
+      }
+      if (v && typeof v === 'object') {
+        if (v.$date) {
+          const t = new Date(v.$date).getTime()
+          return Number.isFinite(t) ? t : 0
+        }
+        if (v.time) {
+          const t = new Date(v.time).getTime()
+          return Number.isFinite(t) ? t : 0
+        }
+      }
+      return 0
+    }
     const isOfficialMember = userInfo.isOfficialMember === true;
     if (!isOfficialMember) {
       this.setData({ canExchange: false, exchangeBtnText: '仅正式会员可兑换' });
       return;
     }
-    if (!paidYears.includes(currentYear)) {
-      this.setData({ canExchange: false, exchangeBtnText: '需当年缴费' });
+    const untilTs = toTs(userInfo.officialMemberUntil)
+    if (untilTs > 0 && untilTs <= Date.now()) {
+      this.setData({ canExchange: false, exchangeBtnText: '会员已到期' });
       return;
     }
     // 检查兑换权限是否被锁定
     if (userInfo.exchange_locked === true) {
-      this.setData({ canExchange: false, exchangeBtnText: '兑换权限已锁定' });
+      this.setData({ canExchange: false, exchangeBtnText: '未激活：需一次铁三打卡通过或管理员解锁' });
       return;
     }
     if (userPoints < product.points) {

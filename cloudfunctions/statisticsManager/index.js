@@ -7,6 +7,64 @@ cloud.init({
 
 const db = cloud.database()
 const _ = db.command
+const $ = db.command.aggregate
+
+function getStartDateByRange(timeRange = '30d') {
+  const now = new Date()
+  const startDate = new Date(now)
+  switch (String(timeRange)) {
+    case '7d':
+      startDate.setDate(now.getDate() - 7)
+      break
+    case '30d':
+      startDate.setDate(now.getDate() - 30)
+      break
+    case '90d':
+      startDate.setDate(now.getDate() - 90)
+      break
+    case '1y':
+      startDate.setFullYear(now.getFullYear() - 1)
+      break
+    case 'all':
+      return { now, startDate: null }
+    default:
+      startDate.setDate(now.getDate() - 30)
+  }
+  return { now, startDate }
+}
+
+function toDateSafe(v) {
+  if (!v) return null
+  if (v instanceof Date) return v
+  const d = new Date(v)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function formatYmd(d) {
+  const t = toDateSafe(d)
+  if (!t) return ''
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
+}
+
+async function assertAdmin(openid) {
+  const r = await db.collection('users').where({ _openid: openid }).limit(1).get()
+  const u = (r && r.data && r.data[0]) || null
+  if (!u || u.isAdmin !== true) throw new Error('无权限访问')
+  return u
+}
+
+async function fetchAllPaged(query, { pageSize = 200 } = {}) {
+  const countRes = await query.count()
+  const total = countRes.total || 0
+  if (total === 0) return []
+  const pages = Math.ceil(total / pageSize)
+  const rows = []
+  for (let i = 0; i < pages; i++) {
+    const res = await query.skip(i * pageSize).limit(pageSize).get()
+    rows.push(...(res.data || []))
+  }
+  return rows
+}
 
 async function ensureCollections(names = []) {
   for (const name of names) {
@@ -20,10 +78,6 @@ exports.main = async (event, context) => {
 
   try {
     switch (action) {
-      case 'recordVisit':
-        return await recordVisit(OPENID, data)
-      case 'getQuickAnalytics':
-        return await getQuickAnalytics(OPENID, data)
       case 'upsertPartner':
         return await upsertPartner(OPENID, data)
       case 'getPartners':
@@ -52,50 +106,6 @@ exports.main = async (event, context) => {
   }
 }
 
-async function recordVisit(openid, { page = '', category = '' }) {
-  await ensureCollections(['app_metrics'])
-  const coll = db.collection('app_metrics')
-  const now = new Date()
-  const day = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
-  const docId = `${day}:${category || 'unknown'}:${page || 'unknown'}`
-  try {
-    await coll.doc(docId).update({ data: { count: _.inc(1), updatedAt: db.serverDate(), lastOpenId: openid } })
-  } catch (_) {
-    await coll.add({ data: { _id: docId, day, page, category, count: 1, createdAt: db.serverDate(), updatedAt: db.serverDate() } })
-  }
-  return { success: true }
-}
-
-async function getQuickAnalytics(openid, data = {}) {
-  await ensureCollections(['app_metrics','point_records','products'])
-  // 管理员校验
-  const u = await db.collection('users').where({ _openid: openid }).limit(1).get()
-  if (!u.data.length || u.data[0].isAdmin !== true) return { success: false, message: '无权限' }
-  // 访问统计
-  const last = String(data.timeRange || '30d')
-  const now = new Date()
-  let start = new Date(now)
-  let metrics
-  if (last === 'all') {
-    metrics = await db.collection('app_metrics').get()
-  } else {
-    if (last === '7d') start.setDate(now.getDate() - 7)
-    else start.setDate(now.getDate() - 30)
-    const startStr = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`
-    metrics = await db.collection('app_metrics').where({ day: _.gte(startStr) }).get()
-  }
-  const totals = { total: 0, home: 0, tools: 0, upload: 0, store: 0, leaderboard: 0, admin: 0 }
-  metrics.data.forEach(m => { totals.total += (m.count||0); const c = (m.category||'unknown'); if (totals[c]!=null) totals[c]+= (m.count||0) })
-  // 业务统计（使用真实集合名）
-  const prTotal = (await db.collection('point_records').count()).total || 0
-  const prAudited = (await db.collection('point_records').where({ status: _.in(['approved','rejected']) }).count()).total || 0
-  const productsTotal = (await db.collection('products').count()).total || 0
-  // 文本分析
-  const rangeText = last==='7d' ? '近7天' : (last==='30d' ? '近30天' : '总累计')
-  const summary = `${rangeText}访问总量 ${totals.total}；主页 ${totals.home}，工具 ${totals.tools}，上传 ${totals.upload}，兑换 ${totals.store}，后台 ${totals.admin}。累计上传 ${prTotal}，累计审核 ${prAudited}，上架商品 ${productsTotal}。`
-  return { success: true, data: { totals, business: { submissions: prTotal, audits: prAudited, products: productsTotal }, summary, timeRange: last } }
-}
-
 // ==== Partners 管理 ====
 async function upsertPartner(openid, { key = '', fileID = '', name = '' }) {
   await ensureCollections(['partners'])
@@ -113,41 +123,30 @@ async function upsertPartner(openid, { key = '', fileID = '', name = '' }) {
 async function getPartners(openid) {
   await ensureCollections(['partners'])
   const keys = ['descente','qrtri','quintanaroo','kse','extra1','extra2']
-  const tasks = keys.map(k => db.collection('partners').doc(k).get().then(r => ({ k, fileID: r.data && r.data.fileID })).catch(() => ({ k, fileID: '' })))
+  const tasks = keys.map(k => db.collection('partners').doc(k).get().then(r => ({ key: k, fileID: (r.data && r.data.fileID) || '', name: (r.data && r.data.name) || '' })).catch(() => ({ key: k, fileID: '', name: '' })))
   const rows = await Promise.all(tasks)
+  const fileList = rows.filter(r => r.fileID).map(r => r.fileID)
+  const urlMap = {}
+  if (fileList.length) {
+    try {
+      const tmp = await cloud.getTempFileURL({ fileList })
+      ;(tmp.fileList || []).forEach(f => {
+        if (f && f.fileID) urlMap[f.fileID] = f.tempFileURL || ''
+      })
+    } catch (_) {}
+  }
+  const list = rows.map(r => ({ key: r.key, fileID: r.fileID, url: r.fileID ? (urlMap[r.fileID] || '') : '', name: r.name || '' }))
   const map = {}
-  rows.forEach(r => { map[r.k] = r.fileID || '' })
-  return { success: true, data: map }
+  list.forEach(it => { map[it.key] = it.fileID || '' })
+  return { success: true, data: { list, map } }
 }
 
 // 获取个人统计数据
 async function getPersonalStats(openid, { timeRange = '30d' }) {
   try {
-    const now = new Date()
-    let startDate = new Date()
-    
-    // 根据时间范围设置开始日期
-    switch (timeRange) {
-      case '7d':
-        startDate.setDate(now.getDate() - 7)
-        break
-      case '30d':
-        startDate.setDate(now.getDate() - 30)
-        break
-      case '90d':
-        startDate.setDate(now.getDate() - 90)
-        break
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1)
-        break
-      default:
-        startDate.setDate(now.getDate() - 30)
-    }
+    const { now, startDate } = getStartDateByRange(timeRange)
 
-    // 获取用户基本信息
-    const userRes = await db.collection('users').where({
-      _openid: openid
-    }).get()
+    const userRes = await db.collection('users').where({ _openid: openid }).limit(1).get()
 
     if (userRes.data.length === 0) {
       throw new Error('用户不存在')
@@ -156,20 +155,26 @@ async function getPersonalStats(openid, { timeRange = '30d' }) {
     const user = userRes.data[0]
 
     // 获取积分记录统计
-    const pointRecordsRes = await db.collection('pointRecords').where({
-      userId: openid,
-      createdAt: _.gte(startDate)
-    }).get()
+    const pointWhere = startDate
+      ? { _openid: openid, submitTime: _.gte(startDate) }
+      : { _openid: openid }
+    const pointRecords = await fetchAllPaged(
+      db.collection('point_records')
+        .field({ status: true, points: true, submitTime: true, categoryName: true, activityType: true })
+        .where(pointWhere)
+        .orderBy('submitTime', 'desc')
+    )
 
     // 获取兑换记录统计
-    const exchangeRecordsRes = await db.collection('exchangeRecords').where({
-      userId: openid,
-      createdAt: _.gte(startDate)
-    }).get()
-
-    // 计算统计数据
-    const pointRecords = pointRecordsRes.data
-    const exchangeRecords = exchangeRecordsRes.data
+    const exchangeWhere = startDate
+      ? { _openid: openid, exchange_time: _.gte(startDate) }
+      : { _openid: openid }
+    const exchangeRecords = await fetchAllPaged(
+      db.collection('exchange_records')
+        .field({ status: true, pointsSpent: true, pointsCost: true, exchange_time: true })
+        .where(exchangeWhere)
+        .orderBy('exchange_time', 'desc')
+    )
 
     // 积分获得统计
     const earnedPoints = pointRecords
@@ -179,27 +184,27 @@ async function getPersonalStats(openid, { timeRange = '30d' }) {
     // 积分消费统计
     const spentPoints = exchangeRecords
       .filter(record => record.status !== 'cancelled')
-      .reduce((sum, record) => sum + record.pointsCost, 0)
+      .reduce((sum, record) => sum + (Number(record.pointsSpent || record.pointsCost || 0) || 0), 0)
 
     // 活跃天数统计
     const activeDays = new Set()
     pointRecords.forEach(record => {
-      const date = new Date(record.createdAt).toDateString()
-      activeDays.add(date)
+      const date = formatYmd(record.submitTime)
+      if (date) activeDays.add(date)
     })
     exchangeRecords.forEach(record => {
-      const date = new Date(record.createdAt).toDateString()
-      activeDays.add(date)
+      const date = formatYmd(record.exchange_time)
+      if (date) activeDays.add(date)
     })
 
     // 积分趋势数据
-    const pointsTrend = await generatePointsTrend(openid, startDate, now)
+    const pointsTrend = await generatePointsTrend(openid, startDate || new Date(0), now)
 
     // 活动类型统计
     const activityTypes = {}
     pointRecords.forEach(record => {
       if (record.status === 'approved') {
-        const type = record.activityType || '其他'
+        const type = record.categoryName || record.activityType || '其他'
         activityTypes[type] = (activityTypes[type] || 0) + record.points
       }
     })
@@ -208,7 +213,7 @@ async function getPersonalStats(openid, { timeRange = '30d' }) {
       success: true,
       data: {
         user: {
-          nickname: user.nickname,
+          nickname: user.nickName || user.nickname,
           avatarUrl: user.avatarUrl,
           totalPoints: user.totalPoints || 0,
           isAdmin: user.isAdmin || false
@@ -233,57 +238,31 @@ async function getPersonalStats(openid, { timeRange = '30d' }) {
 // 获取管理员统计数据
 async function getAdminStats(openid, { timeRange = '30d' }) {
   try {
-    // 验证管理员权限
-    const userRes = await db.collection('users').where({
-      _openid: openid
-    }).get()
+    await assertAdmin(openid)
 
-    if (userRes.data.length === 0 || !userRes.data[0].isAdmin) {
-      throw new Error('无权限访问')
-    }
+    const { now, startDate } = getStartDateByRange(timeRange)
 
-    const now = new Date()
-    let startDate = new Date()
-    
-    // 根据时间范围设置开始日期
-    switch (timeRange) {
-      case '7d':
-        startDate.setDate(now.getDate() - 7)
-        break
-      case '30d':
-        startDate.setDate(now.getDate() - 30)
-        break
-      case '90d':
-        startDate.setDate(now.getDate() - 90)
-        break
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1)
-        break
-      default:
-        startDate.setDate(now.getDate() - 30)
-    }
+    const totalUsers = ((await db.collection('users').count()).total) || 0
+    const activeUsers = ((await db.collection('users').where({ totalPoints: _.gt(0) }).count()).total) || 0
 
-    // 获取所有用户统计
-    const usersRes = await db.collection('users').get()
-    const totalUsers = usersRes.data.length
-    const activeUsers = usersRes.data.filter(user => user.totalPoints > 0).length
+    const pointWhere = startDate ? { submitTime: _.gte(startDate) } : {}
+    const exchangeWhere = startDate ? { exchange_time: _.gte(startDate) } : {}
 
-    // 获取积分记录统计
-    const pointRecordsRes = await db.collection('pointRecords').where({
-      createdAt: _.gte(startDate)
-    }).get()
+    const pointRecords = await fetchAllPaged(
+      db.collection('point_records')
+        .field({ status: true, points: true, submitTime: true, categoryName: true, activityType: true, userId: true, _openid: true })
+        .where(pointWhere)
+        .orderBy('submitTime', 'desc')
+    )
 
-    // 获取兑换记录统计
-    const exchangeRecordsRes = await db.collection('exchangeRecords').where({
-      createdAt: _.gte(startDate)
-    }).get()
+    const exchangeRecords = await fetchAllPaged(
+      db.collection('exchange_records')
+        .field({ status: true, pointsSpent: true, pointsCost: true, exchange_time: true, productId: true })
+        .where(exchangeWhere)
+        .orderBy('exchange_time', 'desc')
+    )
 
-    // 获取商品统计
-    const productsRes = await db.collection('products').get()
-
-    const pointRecords = pointRecordsRes.data
-    const exchangeRecords = exchangeRecordsRes.data
-    const products = productsRes.data
+    const totalProducts = ((await db.collection('products').count()).total) || 0
 
     // 积分发放统计
     const totalPointsIssued = pointRecords
@@ -293,7 +272,7 @@ async function getAdminStats(openid, { timeRange = '30d' }) {
     // 积分消费统计
     const totalPointsSpent = exchangeRecords
       .filter(record => record.status !== 'cancelled')
-      .reduce((sum, record) => sum + record.pointsCost, 0)
+      .reduce((sum, record) => sum + (Number(record.pointsSpent || record.pointsCost || 0) || 0), 0)
 
     // 待审核记录数
     const pendingRecords = pointRecords.filter(record => record.status === 'pending').length
@@ -302,7 +281,7 @@ async function getAdminStats(openid, { timeRange = '30d' }) {
     const activityStats = {}
     pointRecords.forEach(record => {
       if (record.status === 'approved') {
-        const type = record.activityType || '其他'
+        const type = record.categoryName || record.activityType || '其他'
         if (!activityStats[type]) {
           activityStats[type] = { count: 0, points: 0 }
         }
@@ -320,7 +299,7 @@ async function getAdminStats(openid, { timeRange = '30d' }) {
           productStats[productId] = { count: 0, points: 0 }
         }
         productStats[productId].count++
-        productStats[productId].points += record.pointsCost
+        productStats[productId].points += (Number(record.pointsSpent || record.pointsCost || 0) || 0)
       }
     })
 
@@ -328,7 +307,7 @@ async function getAdminStats(openid, { timeRange = '30d' }) {
     const userActivity = {}
     pointRecords.forEach(record => {
       if (record.status === 'approved') {
-        const userId = record.userId
+        const userId = record.userId || record._openid
         if (!userActivity[userId]) {
           userActivity[userId] = { points: 0, records: 0 }
         }
@@ -338,21 +317,29 @@ async function getAdminStats(openid, { timeRange = '30d' }) {
     })
 
     // 转换为排行榜格式
-    const topUsers = Object.entries(userActivity)
+    const topBase = Object.entries(userActivity)
       .sort(([,a], [,b]) => b.points - a.points)
       .slice(0, 10)
-      .map(([userId, stats]) => {
-        const user = usersRes.data.find(u => u._openid === userId)
-        return {
-          userId,
-          nickname: (user && user.nickname) || '未知用户',
-          avatarUrl: (user && user.avatarUrl) || '',
-          ...stats
-        }
-      })
+    const topIds = topBase.map(([userId]) => userId).filter(Boolean)
+    const topUsersMap = {}
+    const idLike = v => typeof v === 'string' && /^[0-9a-f]{24}$/i.test(v)
+    const docIds = topIds.filter(idLike)
+    const openids = topIds.filter(v => !idLike(v))
+    if (docIds.length) {
+      const uRes = await db.collection('users').where({ _id: _.in(docIds) }).field({ _id: true, nickName: true, nickname: true, avatarUrl: true, _openid: true }).get()
+      ;(uRes.data || []).forEach(u => { topUsersMap[u._id] = u })
+    }
+    if (openids.length) {
+      const uRes = await db.collection('users').where({ _openid: _.in(openids) }).field({ _id: true, nickName: true, nickname: true, avatarUrl: true, _openid: true }).get()
+      ;(uRes.data || []).forEach(u => { topUsersMap[u._openid] = u })
+    }
+    const topUsers = topBase.map(([userId, stats]) => {
+      const u = topUsersMap[userId] || null
+      return { userId, nickname: (u && (u.nickName || u.nickname)) || '未知用户', avatarUrl: (u && u.avatarUrl) || '', ...stats }
+    })
 
     // 每日趋势数据
-    const dailyTrend = await generateDailyTrend(startDate, now)
+    const dailyTrend = await generateDailyTrend(startDate || new Date(0), now)
 
     return {
       success: true,
@@ -363,7 +350,7 @@ async function getAdminStats(openid, { timeRange = '30d' }) {
           totalPointsIssued,
           totalPointsSpent,
           pendingRecords,
-          totalProducts: products.length
+          totalProducts
         },
         activityStats,
         productStats,
@@ -380,47 +367,40 @@ async function getAdminStats(openid, { timeRange = '30d' }) {
 // 生成积分趋势数据
 async function generatePointsTrend(openid, startDate, endDate) {
   try {
-    const records = await db.collection('pointRecords').where({
-      userId: openid,
-      status: 'approved',
-      createdAt: _.gte(startDate).and(_.lte(endDate))
-    }).orderBy('createdAt', 'asc').get()
+    const records = await fetchAllPaged(
+      db.collection('point_records')
+        .field({ submitTime: true, points: true })
+        .where({
+          _openid: openid,
+          status: 'approved',
+          submitTime: _.gte(startDate).and(_.lte(endDate))
+        })
+        .orderBy('submitTime', 'asc')
+    )
 
-    const trend = []
     let cumulativePoints = 0
-    
-    // 获取起始积分
-    const earlierRecords = await db.collection('pointRecords').where({
-      userId: openid,
-      status: 'approved',
-      createdAt: _.lt(startDate)
-    }).get()
-    
-    cumulativePoints = earlierRecords.data.reduce((sum, record) => sum + record.points, 0)
+    const earlierAgg = await db.collection('point_records')
+      .aggregate()
+      .match({ _openid: openid, status: 'approved', submitTime: _.lt(startDate) })
+      .group({ _id: null, total: $.sum('$points') })
+      .end()
+    const earlierTotal = (earlierAgg.list && earlierAgg.list[0] && earlierAgg.list[0].total) || 0
+    cumulativePoints = Number(earlierTotal || 0) || 0
 
-    // 按日期分组
     const dailyPoints = {}
-    records.data.forEach(record => {
-      const date = new Date(record.createdAt).toDateString()
-      if (!dailyPoints[date]) {
-        dailyPoints[date] = 0
-      }
-      dailyPoints[date] += record.points
+    records.forEach(record => {
+      const date = formatYmd(record.submitTime)
+      if (!date) return
+      dailyPoints[date] = (dailyPoints[date] || 0) + (Number(record.points || 0) || 0)
     })
 
-    // 生成每日趋势
+    const trend = []
     const currentDate = new Date(startDate)
     while (currentDate <= endDate) {
-      const dateStr = currentDate.toDateString()
+      const dateStr = formatYmd(currentDate)
       const dailyChange = dailyPoints[dateStr] || 0
       cumulativePoints += dailyChange
-      
-      trend.push({
-        date: dateStr,
-        points: cumulativePoints,
-        change: dailyChange
-      })
-      
+      trend.push({ date: dateStr, points: cumulativePoints, change: dailyChange })
       currentDate.setDate(currentDate.getDate() + 1)
     }
 
@@ -433,37 +413,45 @@ async function generatePointsTrend(openid, startDate, endDate) {
 // 生成每日趋势数据（管理员）
 async function generateDailyTrend(startDate, endDate) {
   try {
-    const pointRecords = await db.collection('pointRecords').where({
-      createdAt: _.gte(startDate).and(_.lte(endDate))
-    }).get()
+    const pointRecords = await fetchAllPaged(
+      db.collection('point_records')
+        .field({ status: true, points: true, submitTime: true, userId: true, _openid: true })
+        .where({ submitTime: _.gte(startDate).and(_.lte(endDate)) })
+        .orderBy('submitTime', 'asc')
+    )
 
-    const exchangeRecords = await db.collection('exchangeRecords').where({
-      createdAt: _.gte(startDate).and(_.lte(endDate))
-    }).get()
+    const exchangeRecords = await fetchAllPaged(
+      db.collection('exchange_records')
+        .field({ status: true, pointsSpent: true, pointsCost: true, exchange_time: true, _openid: true })
+        .where({ exchange_time: _.gte(startDate).and(_.lte(endDate)) })
+        .orderBy('exchange_time', 'asc')
+    )
 
     const dailyData = {}
     
     // 统计每日积分发放
-    pointRecords.data.forEach(record => {
+    pointRecords.forEach(record => {
       if (record.status === 'approved' && record.points > 0) {
-        const date = new Date(record.createdAt).toDateString()
+        const date = formatYmd(record.submitTime)
+        if (!date) return
         if (!dailyData[date]) {
           dailyData[date] = { issued: 0, spent: 0, users: new Set() }
         }
         dailyData[date].issued += record.points
-        dailyData[date].users.add(record.userId)
+        dailyData[date].users.add(record.userId || record._openid)
       }
     })
 
     // 统计每日积分消费
-    exchangeRecords.data.forEach(record => {
+    exchangeRecords.forEach(record => {
       if (record.status !== 'cancelled') {
-        const date = new Date(record.createdAt).toDateString()
+        const date = formatYmd(record.exchange_time)
+        if (!date) return
         if (!dailyData[date]) {
           dailyData[date] = { issued: 0, spent: 0, users: new Set() }
         }
-        dailyData[date].spent += record.pointsCost
-        dailyData[date].users.add(record.userId)
+        dailyData[date].spent += (Number(record.pointsSpent || record.pointsCost || 0) || 0)
+        dailyData[date].users.add(record._openid)
       }
     })
 
@@ -471,7 +459,7 @@ async function generateDailyTrend(startDate, endDate) {
     const trend = []
     const currentDate = new Date(startDate)
     while (currentDate <= endDate) {
-      const dateStr = currentDate.toDateString()
+      const dateStr = formatYmd(currentDate)
       const data = dailyData[dateStr] || { issued: 0, spent: 0, users: new Set() }
       
       trend.push({
@@ -527,35 +515,20 @@ async function getPointsTrend(openid, { timeRange = '30d' }) {
 // 获取活动统计
 async function getActivityStats(openid, { timeRange = '30d' }) {
   try {
-    const now = new Date()
-    let startDate = new Date()
-    
-    switch (timeRange) {
-      case '7d':
-        startDate.setDate(now.getDate() - 7)
-        break
-      case '30d':
-        startDate.setDate(now.getDate() - 30)
-        break
-      case '90d':
-        startDate.setDate(now.getDate() - 90)
-        break
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1)
-        break
-      default:
-        startDate.setDate(now.getDate() - 30)
-    }
-
-    const records = await db.collection('pointRecords').where({
-      userId: openid,
-      status: 'approved',
-      createdAt: _.gte(startDate)
-    }).get()
+    const { startDate } = getStartDateByRange(timeRange)
+    const where = startDate
+      ? { _openid: openid, status: 'approved', submitTime: _.gte(startDate) }
+      : { _openid: openid, status: 'approved' }
+    const records = await fetchAllPaged(
+      db.collection('point_records')
+        .field({ categoryName: true, activityType: true, points: true })
+        .where(where)
+        .orderBy('submitTime', 'desc')
+    )
 
     const activityStats = {}
-    records.data.forEach(record => {
-      const type = record.activityType || '其他'
+    records.forEach(record => {
+      const type = record.categoryName || record.activityType || '其他'
       if (!activityStats[type]) {
         activityStats[type] = { count: 0, points: 0 }
       }
@@ -575,40 +548,26 @@ async function getActivityStats(openid, { timeRange = '30d' }) {
 // 获取兑换统计
 async function getExchangeStats(openid, { timeRange = '30d' }) {
   try {
-    const now = new Date()
-    let startDate = new Date()
-    
-    switch (timeRange) {
-      case '7d':
-        startDate.setDate(now.getDate() - 7)
-        break
-      case '30d':
-        startDate.setDate(now.getDate() - 30)
-        break
-      case '90d':
-        startDate.setDate(now.getDate() - 90)
-        break
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1)
-        break
-      default:
-        startDate.setDate(now.getDate() - 30)
-    }
-
-    const records = await db.collection('exchangeRecords').where({
-      userId: openid,
-      createdAt: _.gte(startDate)
-    }).get()
+    const { startDate } = getStartDateByRange(timeRange)
+    const where = startDate
+      ? { _openid: openid, exchange_time: _.gte(startDate) }
+      : { _openid: openid }
+    const records = await fetchAllPaged(
+      db.collection('exchange_records')
+        .field({ status: true, pointsSpent: true, pointsCost: true })
+        .where(where)
+        .orderBy('exchange_time', 'desc')
+    )
 
     const exchangeStats = {
-      total: records.data.length,
-      completed: records.data.filter(r => r.status === 'completed').length,
-      pending: records.data.filter(r => r.status === 'pending').length,
-      shipped: records.data.filter(r => r.status === 'shipped').length,
-      cancelled: records.data.filter(r => r.status === 'cancelled').length,
-      totalPoints: records.data
+      total: records.length,
+      completed: records.filter(r => r.status === 'completed').length,
+      pending: records.filter(r => r.status === 'pending').length,
+      shipped: records.filter(r => r.status === 'shipped').length,
+      cancelled: records.filter(r => r.status === 'cancelled').length,
+      totalPoints: records
         .filter(r => r.status !== 'cancelled')
-        .reduce((sum, r) => sum + r.pointsCost, 0)
+        .reduce((sum, r) => sum + (Number(r.pointsSpent || r.pointsCost || 0) || 0), 0)
     }
 
     return {
@@ -623,66 +582,38 @@ async function getExchangeStats(openid, { timeRange = '30d' }) {
 // 获取成员统计（管理员）
 async function getMemberStats(openid, { timeRange = '30d' }) {
   try {
-    // 验证管理员权限
-    const userRes = await db.collection('users').where({
-      _openid: openid
-    }).get()
+    await assertAdmin(openid)
 
-    if (userRes.data.length === 0 || !userRes.data[0].isAdmin) {
-      throw new Error('无权限访问')
-    }
+    const { startDate } = getStartDateByRange(timeRange)
+    const from = startDate || new Date(0)
 
-    const now = new Date()
-    let startDate = new Date()
-    
-    switch (timeRange) {
-      case '7d':
-        startDate.setDate(now.getDate() - 7)
-        break
-      case '30d':
-        startDate.setDate(now.getDate() - 30)
-        break
-      case '90d':
-        startDate.setDate(now.getDate() - 90)
-        break
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1)
-        break
-      default:
-        startDate.setDate(now.getDate() - 30)
-    }
-
-    const users = await db.collection('users').get()
-    const pointRecords = await db.collection('pointRecords').where({
-      createdAt: _.gte(startDate)
-    }).get()
-
-    // 成员活跃度统计
+    const agg = await db.collection('point_records')
+      .aggregate()
+      .match({ status: 'approved', points: _.gt(0), submitTime: _.gte(from), userId: _.exists(true) })
+      .group({
+        _id: '$userId',
+        records: $.sum(1),
+        points: $.sum('$points'),
+        lastActivity: $.max('$submitTime')
+      })
+      .end()
     const memberActivity = {}
-    pointRecords.data.forEach(record => {
-      if (record.status === 'approved') {
-        const userId = record.userId
-        if (!memberActivity[userId]) {
-          memberActivity[userId] = {
-            records: 0,
-            points: 0,
-            lastActivity: record.createdAt
-          }
-        }
-        memberActivity[userId].records++
-        memberActivity[userId].points += record.points
-        if (new Date(record.createdAt) > new Date(memberActivity[userId].lastActivity)) {
-          memberActivity[userId].lastActivity = record.createdAt
-        }
-      }
+    ;(agg.list || []).forEach(row => {
+      if (!row || !row._id) return
+      memberActivity[row._id] = { records: row.records || 0, points: row.points || 0, lastActivity: row.lastActivity || null }
     })
 
-    // 合并用户信息
-    const memberStats = users.data.map(user => {
-      const activity = memberActivity[user._openid] || { records: 0, points: 0, lastActivity: null }
+    const users = await fetchAllPaged(
+      db.collection('users')
+        .field({ _id: true, _openid: true, nickName: true, nickname: true, avatarUrl: true, totalPoints: true, isAdmin: true })
+    )
+
+    const memberStats = users.map(user => {
+      const activity = memberActivity[user._id] || { records: 0, points: 0, lastActivity: null }
       return {
-        userId: user._openid,
-        nickname: user.nickname,
+        userId: user._id,
+        openid: user._openid,
+        nickname: user.nickName || user.nickname,
         avatarUrl: user.avatarUrl,
         totalPoints: user.totalPoints || 0,
         isAdmin: user.isAdmin || false,

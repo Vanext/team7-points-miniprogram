@@ -8,7 +8,7 @@
   </block>
   
   <block wx:else>
-    <!-- 标签页 - 优化样式 -->
+    <!-- 标签页 -->
     <view class="tabs-container">
       <view class="tabs">
         <view 
@@ -24,121 +24,92 @@
       </view>
     </view>
     
-    <!-- 记录列表 - 优化布局 -->
-    <view class="records-list">
-      <block wx:if="{{records.length > 0}}">
-        <view 
-          wx:for="{{records}}" 
-          wx:key="_id" 
-          class="record-card {{item.autoApproved ? 'auto-approved' : ''}}"
-          data-id="{{item._id}}"
-        >
-          <!-- 记录头部 - 优化布局 -->
-          <view class="record-header">
-            <view class="user-info">
-              <image class="user-avatar" src="{{item.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
-              <view class="record-info">
-                <text class="user-name">{{item.userInfo.nickName || '用户'}}</text>
-                <text class="submit-time">{{item.submitTimeFormatted}}</text>
+    <!-- 记录列表 -->
+    <scroll-view scroll-y class="records-scroll" bindscrolltolower="onReachBottom" enable-back-to-top>
+      <view class="records-list">
+        <block wx:if="{{records.length > 0}}">
+          <view 
+            wx:for="{{records}}" 
+            wx:key="_id" 
+            class="record-card {{item.autoApproved ? 'auto-approved' : ''}}"
+            data-id="{{item._id}}"
+            bindtap="{{currentTab === 'rejected' ? 'viewDetail' : ''}}"
+          >
+            <!-- 主要内容区域：左侧信息 + 右侧图片 -->
+            <view class="card-main">
+              <!-- 左侧信息区 -->
+              <view class="card-info">
+                <!-- 顶部：头像、名字、日期 -->
+                <view class="info-header">
+                  <image class="avatar" src="{{item.userInfo.avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+                  <view class="user-meta">
+                    <view class="name-row">
+                      <text class="name">{{item.userInfo.nickName || '用户'}}</text>
+                      <text class="category-tag">{{item.category}}</text>
+                    </view>
+                    <text class="date">{{item.submitTimeFormatted}}</text>
+                  </view>
+                  <view class="points-badge">+{{item.points}}</view>
+                </view>
+
+                <!-- 中部：描述文本 -->
+                <view class="info-desc">
+                  <text class="desc-text">{{item.description || '无描述'}}</text>
+                  <view class="reject-reason" wx:if="{{currentTab === 'rejected' && item.rejectReason}}">
+                    <text class="reason-label">驳回:</text> {{item.rejectReason}}
+                  </view>
+                </view>
               </view>
-            </view>
-            <view class="points-container">
-              <text class="points">+{{item.points}}</text>
-              <text class="auto-tag" wx:if="{{item.autoApproved}}">自动</text>
-            </view>
-          </view>
-          
-          <!-- 记录内容 - 优化布局（待审/已通过直接在列表操作；已拒绝可点进详情看理由） -->
-          <view class="record-body" wx:if="{{currentTab !== 'rejected'}}">
-            <view class="record-content">
-              <view class="category-row">
-                <text class="category">{{item.category}}</text>
+
+              <!-- 右侧图片区 (如果有图) -->
+              <view class="card-media" wx:if="{{item.thumb}}" catchtap="previewImages" data-images="{{item.images}}">
+                <image src="{{item.thumb}}" mode="aspectFill" class="media-img"></image>
+                <view class="img-count" wx:if="{{item.images.length > 1}}">{{item.images.length}}</view>
               </view>
-              <text class="description">{{item.description}}</text>
             </view>
             
-            <!-- 图片预览 - 优化布局 -->
-            <view class="image-preview" wx:if="{{item.thumb}}" bindtap="previewImages" data-images="{{item.images}}">
-              <image 
-                src="{{item.thumb}}" 
-                mode="aspectFill"
-                class="preview-image"
-                lazy-load="true"></image>
-              <view class="image-count-badge" wx:if="{{item.images.length > 1}}">
-                <text>+{{item.images.length - 1}}</text>
+            <!-- 底部操作栏 -->
+            <view class="card-actions">
+              <view class="status-tag" wx:if="{{item.autoApproved}}">
+                <text class="icon-auto">⚡</text> 自动通过
+              </view>
+              <view class="status-tag" wx:elif="{{currentTab === 'approved'}}">
+                <text class="icon-check">✓</text> 已通过
+              </view>
+              <view class="status-tag reject" wx:elif="{{currentTab === 'rejected'}}">
+                <text class="icon-close">✕</text> 已拒绝
+              </view>
+              <view class="spacer"></view>
+              
+              <view class="btn-group">
+                <block wx:if="{{currentTab === 'pending'}}">
+                  <view class="action-btn reject" catchtap="rejectRecord" data-id="{{item._id}}">拒绝</view>
+                  <view class="action-btn approve" catchtap="approveRecord" data-id="{{item._id}}">通过</view>
+                </block>
+                <block wx:if="{{currentTab === 'approved'}}">
+                  <view class="action-btn warn" catchtap="cancelApproval" data-id="{{item._id}}">撤销</view>
+                </block>
+                <block wx:if="{{currentTab === 'rejected'}}">
+                  <view class="action-btn approve" catchtap="approveRejected" data-id="{{item._id}}">恢复通过</view>
+                </block>
               </view>
             </view>
           </view>
-
-          <view class="record-body" wx:if="{{currentTab === 'rejected'}}" bindtap="viewDetail" data-id="{{item._id}}">
-            <view class="record-content">
-              <view class="category-row">
-                <text class="category">{{item.category}}</text>
-              </view>
-              <text class="description">{{item.description}}</text>
-              <view class="reject-hint" wx:if="{{item.rejectReason}}">
-                <text class="hint-label">理由</text>
-                <text class="hint-text">{{item.rejectReason}}</text>
-              </view>
-            </view>
-            <view class="image-preview" wx:if="{{item.thumb}}">
-              <image 
-                src="{{item.thumb}}" 
-                mode="aspectFill"
-                class="preview-image"
-                lazy-load="true"></image>
-              <view class="image-count-badge" wx:if="{{item.images.length > 1}}">
-                <text>+{{item.images.length - 1}}</text>
-              </view>
-            </view>
-          </view>
-          
-          <!-- 操作按钮 - 优化布局和逻辑 -->
-          <view class="record-actions">
-            <block wx:if="{{currentTab === 'pending'}}">
-              <button 
-                class="action-btn approve" 
-                bindtap="approveRecord"
-                data-id="{{item._id}}">通过</button>
-              <button 
-                class="action-btn reject" 
-                bindtap="rejectRecord"
-                data-id="{{item._id}}">拒绝</button>
-            </block>
-            <block wx:if="{{currentTab === 'approved'}}">
-              <button 
-                class="action-btn cancel" 
-                bindtap="cancelApproval"
-                data-id="{{item._id}}">取消通过</button>
-            </block>
-            <block wx:if="{{currentTab === 'rejected'}}">
-              <button 
-                class="action-btn approve" 
-                bindtap="approveRejected"
-                data-id="{{item._id}}">重新通过</button>
-            </block>
-          </view>
+        </block>
+        
+        <view class="empty-state" wx:elif="{{!loading}}">
+          <image src="/images/empty.png" mode="widthFix" class="empty-img" wx:if="{{false}}"></image>
+          <text>暂无记录</text>
         </view>
-      </block>
-      
-      <view class="empty-state" wx:elif="{{!loading}}">
-        <text>暂无{{currentTab === 'pending' ? '待审核' : currentTab === 'approved' ? '已通过' : '已拒绝'}}的积分记录</text>
-      </view>
-      
-      <!-- 加载状态 -->
-      <view class="loading-state" wx:if="{{loading}}">
-        <text>加载中...</text>
-      </view>
-      
-      <!-- 优化分页显示 -->
-      <view class="pagination" wx:if="{{!loading && records.length > 0}}">
-        <view class="page-button {{!hasMore ? 'disabled' : ''}}" bindtap="loadRecords" wx:if="{{hasMore}}">
-          <text>加载更多</text>
+        
+        <view class="loading-state" wx:if="{{loading}}">
+          <text>加载中...</text>
         </view>
-        <view class="page-info" wx:if="{{!hasMore}}">
-          <text>已加载全部</text>
+        
+        <view class="no-more" wx:if="{{!loading && !hasMore && records.length > 0}}">
+          <text>没有更多记录了</text>
         </view>
       </view>
-    </view>
+    </scroll-view>
   </block>
 </view>
