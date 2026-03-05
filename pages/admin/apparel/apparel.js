@@ -6,8 +6,8 @@ Page({
     loading: false,
     list: [],
     categoryOptions: ['会员T恤', '铁三服', '泳帽', '渔夫帽', '跟屁虫'],
-    genderOptions: ['男', '女'],
-    sizeOptions: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+    genderOptions: ['男', '女', '儿童'],
+    sizeOptions: ['6XS', '5XS', '4XS', '3XS', '2XS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
     genderSizeOptions: [],
     activeTab: 'all', // all, orderedNotShipped, shipped
     groups: [],
@@ -86,7 +86,7 @@ Page({
           let gender = item.gender || ''
           let size = item.size || ''
           if (!gender && typeof size === 'string') {
-            const m = size.match(/^([男女])[- ]?(.*)$/)
+            const m = size.match(/^([男女]|儿童)[- ]?(.*)$/)
             if (m) {
               gender = m[1]
               size = m[2] || ''
@@ -148,7 +148,14 @@ Page({
       map[cat].push(it)
     }
     
-    const keys = Object.keys(map).sort()
+    let keys = Object.keys(map).sort()
+    // Ensure '未分类' is always at the top
+    const unclassIdx = keys.indexOf('未分类')
+    if (unclassIdx > -1) {
+      keys.splice(unclassIdx, 1)
+      keys.unshift('未分类')
+    }
+    
     const groups = keys.map(cat => ({ category: cat, items: map[cat] }))
     this.setData({ groups })
   },
@@ -243,7 +250,7 @@ Page({
     const text = this.data.genderSizeOptions[optionIndex] || ''
     let gender = ''
     let size = ''
-    const m = text.match(/^([男女])[- ]?(.*)$/)
+    const m = text.match(/^([男女]|儿童)[- ]?(.*)$/)
     if (m) {
       gender = m[1]
       size = (m[2] || '').trim().toUpperCase()
@@ -337,6 +344,32 @@ Page({
         address: item.address,
         remark: item.remark
       })
+    }
+  },
+
+  async onCopyRowById(e) {
+    const id = e.currentTarget.dataset.id
+    const index = this.findIndexById(id)
+    if (index === -1) return
+
+    const item = this.data.list[index] || {}
+    const name = String(item.name || '').trim()
+    const mobile = String(item.mobile || '').trim()
+    const address = String(item.address || '').trim()
+
+    const firstLine = [name, mobile].filter(Boolean).join(' ')
+    const text = [firstLine, address].filter(Boolean).join('\n').trim()
+    if (!text) {
+      wx.showToast({ title: '无可复制信息', icon: 'none' })
+      return
+    }
+
+    try {
+      await wx.setClipboardData({ data: text })
+      const incomplete = (!name || !mobile || !address)
+      wx.showToast({ title: incomplete ? '已复制(不全)' : '已复制', icon: 'success', duration: 800 })
+    } catch (_) {
+      wx.showToast({ title: '复制失败', icon: 'none' })
     }
   },
 
@@ -550,13 +583,32 @@ Page({
 
   buildGenderSizeOptions() {
     const genders = this.data.genderOptions || []
-    const sizes = this.data.sizeOptions || []
     const list = []
+    
+    // Define size ranges per gender
+    const adultSizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']
+    const childSizes = ['6XS', '5XS', '4XS', '3XS', '2XS', 'XS', 'S', 'M', 'L']
+    
     for (const g of genders) {
+      // Choose size list based on gender
+      const sizes = (g === '儿童') ? childSizes : adultSizes
       for (const s of sizes) {
         list.push(`${g}${s}`)
       }
     }
     return list
+  },
+
+  onShareAppMessage() {
+    return {
+      title: '服装发放管理',
+      path: '/pages/admin/apparel/apparel'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: '服装发放管理'
+    }
   }
 })

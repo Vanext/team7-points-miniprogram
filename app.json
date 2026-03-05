@@ -20,6 +20,7 @@
     "pages/admin/camp-applications/camp-applications",
     "pages/admin/camp-stats/camp-stats",
     "pages/admin/apparel/apparel",
+    "pages/admin/youth-training/youth-training",
     "pages/camp/home/home",
     "pages/camp/course/course",
     "pages/camp/leaderboard/leaderboard",

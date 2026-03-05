@@ -2,7 +2,7 @@
 
 ## 项目信息
 - AppID: wx53dce74e3bb3e8c8
-- 云环境ID: cloudbase-0gvjuae479205e8
+- 云环境ID: cloudbase-0gvjuqae479205e8
 
 ## 开发说明
 1. 使用微信开发者工具打开项目
@@ -29,3 +29,8 @@
 - 环境一致性：云函数统一使用 `cloud.DYNAMIC_CURRENT_ENV`
 - 索引快照：包含 `point_records` 的 `status + _openid`、`_openid + submitTime` 等复合索引
 - 验证与回滚：拉取仓库后抽样对比函数与页面；前端/云函数/索引分别按归档目录覆盖与恢复
+
+## 文档与维护约定
+- 文档索引入口：`.trae/documents/README.md`
+- 贡献指南：CONTRIBUTING.md
+- 单一事实来源：同一算法/规则只在一份文档维护，其它地方只做链接或摘要

@@ -105,6 +105,7 @@
                 </view>
                 
                 <view class="actions compact-actions">
+                  <view class="act-btn copy compact-btn" data-id="{{row._id}}" bindtap="onCopyRowById">复制</view>
                   <view class="act-btn save compact-btn" data-id="{{row._id}}" bindtap="onSaveRowById">保存</view>
                   <view class="act-btn del compact-btn" data-id="{{row._id}}" bindtap="removeById">删除</view>
                 </view>

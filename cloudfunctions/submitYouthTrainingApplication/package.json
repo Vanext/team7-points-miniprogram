@@ -1,0 +1,9 @@
+{
+  "name": "submitYouthTrainingApplication",
+  "version": "1.0.0",
+  "description": "Submit youth training application",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

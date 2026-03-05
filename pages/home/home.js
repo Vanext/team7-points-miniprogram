@@ -15,7 +15,34 @@ Page({
     bulletins: [],
     joinedMap: {},
     expandedIds: [],
-    myOpenid: ''
+    myOpenid: '',
+    currentBulletinIndex: 0,
+    bulletinSwiperHeight: 240,
+    showYouthModal: false,
+    youthForm: {
+      name: '',
+      gender: '',
+      age: '',
+      height: '',
+      hasInsurance: '',
+      days: [],
+      contactPerson: '',
+      contactPhone: ''
+    },
+    youthSubmitting: false,
+    genderOptions: ['男', '女'],
+    insuranceOptions: ['是', '否'],
+    availableDates: [
+      { date: '2月6日', id: '0206' },
+      { date: '2月7日', id: '0207' },
+      { date: '2月8日', id: '0208' },
+      { date: '2月9日', id: '0209' },
+      { date: '2月10日', id: '0210' },
+      { date: '2月11日', id: '0211' },
+      { date: '2月12日', id: '0212' },
+      { date: '2月13日', id: '0213' },
+      { date: '2月14日', id: '0214' }
+    ]
   },
 
   onLoad() {
@@ -217,6 +244,28 @@ Page({
     this.startAnnAutoScroll()
   },
 
+  onBulletinSwiperChange(e) {
+    const cur = (e && e.detail && typeof e.detail.current === 'number') ? e.detail.current : 0
+    this.setData({ currentBulletinIndex: cur })
+    this.updateBulletinSwiperHeight(cur)
+  },
+
+  updateBulletinSwiperHeight(index) {
+    const list = this.data.bulletins || []
+    const it = list[index]
+    if (!it || !it._id) return
+    const selector = `#bulletin-slide-${it._id}`
+    const run = () => {
+      wx.createSelectorQuery().in(this).select(selector).boundingClientRect(rect => {
+        if (!rect || !rect.height) return
+        const h = Math.ceil(rect.height + 24)
+        if (h > 0) this.setData({ bulletinSwiperHeight: h })
+      }).exec()
+    }
+    if (typeof wx.nextTick === 'function') wx.nextTick(run)
+    else setTimeout(run, 0)
+  },
+
   startAnnAutoScroll() {
     if (this.annTimer) clearInterval(this.annTimer)
     this.annTimer = setInterval(() => {
@@ -323,18 +372,20 @@ Page({
             const nm = (p && p.nickName) || ''
             if (!k || seen[k]) return
             seen[k] = 1
-            if (nm && nm !== '未登录' && nm !== '微信用户') named.push({ openid: k, nickName: nm })
+            if (nm && nm !== '未登录' && nm !== '微信用户' && nm !== '未登记') named.push({ openid: k, nickName: nm })
           })
-          return { ...x.bulletin, joined: !!x.joined, participants: named, expanded: false }
+          const participantsText = named.map(p => p.nickName).filter(Boolean).join('、')
+          return { ...x.bulletin, joined: !!x.joined, participants: named, participantsText, expanded: false }
         })
         const joined = {}
         list.forEach(it => { joined[it._id] = !!it.joined })
-        this.setData({ bulletins: list, joinedMap: joined })
+        this.setData({ bulletins: list, joinedMap: joined, currentBulletinIndex: 0 })
+        this.updateBulletinSwiperHeight(0)
       } else {
-        this.setData({ bulletins: [], joinedMap: {} })
+        this.setData({ bulletins: [], joinedMap: {}, currentBulletinIndex: 0 })
       }
     } catch (_) {
-      this.setData({ bulletins: [], joinedMap: {} })
+      this.setData({ bulletins: [], joinedMap: {}, currentBulletinIndex: 0 })
     }
   },
 
@@ -346,8 +397,12 @@ Page({
     const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
     const action = this.data.joinedMap[id] ? 'leave' : 'join'
     const rawNick = (this.data.userInfo && (this.data.userInfo.nickName || this.data.userInfo.nickname || this.data.userInfo.realName)) || ''
-    const validNick = (!!rawNick && rawNick !== '未登录' && rawNick !== '微信用户')
+    const validNick = (!!rawNick && rawNick !== '未登录' && rawNick !== '微信用户' && rawNick !== '未登记')
     const nick = validNick ? rawNick : ''
+    if (action === 'join' && !validNick) {
+      wx.showToast({ title: '请先完善昵称后再接龙', icon: 'none' })
+      return
+    }
     wx.showLoading({ title: action === 'join' ? '加入中...' : '取消中...' })
     try {
       if (action === 'join' && b.reminderTemplateId) {
@@ -378,7 +433,8 @@ Page({
             seen[k] = 1
             dedup.push(p)
           })
-          return { ...x, participants: dedup, joined: action === 'join' }
+          const participantsText = dedup.map(p => p && p.nickName).filter(Boolean).join('、')
+          return { ...x, participants: dedup, participantsText, joined: action === 'join' }
         })
         const jm = { ...this.data.joinedMap, [id]: action === 'join' }
         this.setData({ bulletins: list, joinedMap: jm })
@@ -403,5 +459,101 @@ Page({
       return x
     })
     this.setData({ bulletins: list })
+  },
+
+  openYouthModal() {
+    this.setData({ showYouthModal: true })
+  },
+
+  closeYouthModal() {
+    this.setData({ showYouthModal: false })
+  },
+
+  onYouthInput(e) {
+    const field = e.currentTarget.dataset.field
+    const value = e.detail.value
+    this.setData({
+      [`youthForm.${field}`]: value
+    })
+  },
+
+  onGenderChange(e) {
+    const idx = e.detail.value
+    const val = this.data.genderOptions[idx]
+    this.setData({ 'youthForm.gender': val })
+  },
+
+  onInsuranceChange(e) {
+    const idx = e.detail.value
+    const val = this.data.insuranceOptions[idx]
+    this.setData({ 'youthForm.hasInsurance': val })
+  },
+
+  toggleDateSelection(e) {
+    const date = e.currentTarget.dataset.date
+    let days = this.data.youthForm.days || []
+    if (days.includes(date)) {
+      days = days.filter(d => d !== date)
+    } else {
+      days.push(date)
+      // Sort days based on availableDates order if needed, but simple push/filter is fine for now
+      // Let's sort to keep them in order
+      const order = this.data.availableDates.map(x => x.date)
+      days.sort((a, b) => order.indexOf(a) - order.indexOf(b))
+    }
+    this.setData({ 'youthForm.days': days })
+  },
+
+  async submitYouthForm() {
+    const { name, gender, age, height, hasInsurance, days, contactPerson, contactPhone } = this.data.youthForm
+    
+    if (!name || !gender || !age || !height || !hasInsurance || !days.length || !contactPerson || !contactPhone) {
+      wx.showToast({ title: '请填写完整信息', icon: 'none' })
+      return
+    }
+
+    this.setData({ youthSubmitting: true })
+    const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'submitYouthTrainingApplication',
+        config: { env: cloudEnv },
+        data: {
+          name,
+          gender,
+          age,
+          height,
+          hasInsurance,
+          days,
+          contactPerson,
+          contactPhone
+        }
+      })
+
+      if (res.result && res.result.success) {
+        wx.showToast({ title: '报名成功', icon: 'success' })
+        this.setData({ 
+          showYouthModal: false,
+          youthForm: {
+            name: '',
+            gender: '',
+            age: '',
+            height: '',
+            hasInsurance: '',
+            days: [],
+            contactPerson: '',
+            contactPhone: ''
+          }
+        })
+      } else {
+        wx.showToast({ title: res.result.message || '报名失败', icon: 'none' })
+      }
+    } catch (err) {
+      console.error('报名失败', err)
+      wx.showToast({ title: '报名失败，请重试', icon: 'none' })
+    } finally {
+      this.setData({ youthSubmitting: false })
+    }
   },
 })

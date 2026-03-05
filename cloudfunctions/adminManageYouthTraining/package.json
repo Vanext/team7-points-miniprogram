@@ -1,0 +1,9 @@
+{
+  "name": "adminManageYouthTraining",
+  "version": "1.0.0",
+  "description": "Admin manage youth training applications",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

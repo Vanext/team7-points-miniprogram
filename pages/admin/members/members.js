@@ -20,7 +20,7 @@ Page({
     newPoints: '',
     newPointsMap: {}, // 存储每个用户的积分输入
     deltaMap: {}, // 废弃，保留兼容
-    sortBy: 'points', // 'points' | 'name'
+    sortBy: 'joinDate', // 'joinDate' | 'points' | 'name'
     chunkSize: 20,
     sortDebounceMs: 150,
     searchDebounceMs: 250,
@@ -62,8 +62,19 @@ Page({
     return `${y}-${m}-${day}`
   },
 
+  _formatYYMMDD(ts) {
+    if (!ts) return ''
+    const d = new Date(ts)
+    if (!Number.isFinite(d.getTime())) return ''
+    const y = String(d.getFullYear()).slice(-2)
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  },
+
   _normalizeUserForList(user) {
     const untilTs = this._toTs(user.officialMemberUntil)
+    const joinTs = this._toTs(user.joinDate || user.createTime)
     const isOfficialMember = user.isOfficialMember === true
     const isOfficialValid = isOfficialMember && (untilTs === 0 || untilTs > Date.now())
     const exchangeLocked = user.exchange_locked === true
@@ -75,7 +86,8 @@ Page({
       isAdmin: user.isAdmin === true,
       isOfficialMember: isOfficialValid,
       exchange_locked: exchangeLocked,
-      officialMemberUntilText: isOfficialValid ? this._formatUntil(untilTs) : '',
+      officialMemberUntilText: isOfficialValid ? this._formatYYMMDD(untilTs) : '',
+      registerDateText: joinTs ? this._formatYYMMDD(joinTs) : '',
       isExchangeActivated: Boolean(isExchangeActivated)
     }
   },
@@ -151,7 +163,7 @@ Page({
       this.updateLocalList(user._id, {
         isOfficialMember: nextOfficial,
         officialMemberUntil: nextUntil,
-        officialMemberUntilText: nextOfficial ? this._formatUntil(this._toTs(nextUntil)) : '',
+        officialMemberUntilText: nextOfficial ? this._formatYYMMDD(this._toTs(nextUntil)) : '',
         exchange_locked: nextLocked,
         isExchangeActivated: nextOfficial && !nextLocked
       })
@@ -186,9 +198,12 @@ Page({
       const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
       
       // 根据 sortBy 决定排序参数
-      let sortField = 'totalPoints'
+      let sortField = 'joinDate'
       let sortOrder = 'desc'
-      if (this.data.sortBy === 'name') {
+      if (this.data.sortBy === 'points') {
+        sortField = 'totalPoints'
+        sortOrder = 'desc'
+      } else if (this.data.sortBy === 'name') {
         sortField = 'nickName'
         sortOrder = 'asc'
       }
@@ -264,6 +279,16 @@ Page({
     const run = () => {
       if (this.data.sortBy !== 'points') {
         this.setData({ sortBy: 'points' })
+        this.fetch(true)
+      }
+    }
+    this._debounce('sort', run, this.data.sortDebounceMs)
+  },
+
+  onSortByJoinDate() {
+    const run = () => {
+      if (this.data.sortBy !== 'joinDate') {
+        this.setData({ sortBy: 'joinDate' })
         this.fetch(true)
       }
     }
@@ -536,14 +561,14 @@ Page({
           const nextLocked = typeof d.exchange_locked === 'boolean' ? d.exchange_locked : (nextOfficial ? true : false)
           
           app.showToast('操作成功')
-          this.updateLocalList(userId, {
-            isOfficialMember: nextOfficial,
-            officialMemberUntil: nextUntil,
-            officialMemberUntilText: nextOfficial ? this._formatUntil(this._toTs(nextUntil)) : '',
-            exchange_locked: nextLocked,
-            isExchangeActivated: nextOfficial && !nextLocked
-          })
-          this.updateCounts() // 更新统计
+      this.updateLocalList(userId, {
+        isOfficialMember: nextOfficial,
+        officialMemberUntil: nextUntil,
+        officialMemberUntilText: nextOfficial ? this._formatYYMMDD(this._toTs(nextUntil)) : '',
+        exchange_locked: nextLocked,
+        isExchangeActivated: nextOfficial && !nextLocked
+      })
+      this.updateCounts() // 更新统计
           
         } catch (error) {
           app.showToast(error.message || '操作失败', 'error')
@@ -570,6 +595,53 @@ Page({
       fullList: newFullList,
       list: newList
     })
+  },
+
+  removeLocalMember(userId) {
+    const newFullList = (this.data.fullList || []).filter(it => it && it._id !== userId)
+    const newList = (this.data.list || []).filter(it => it && it._id !== userId)
+    const nextPointsMap = { ...(this.data.newPointsMap || {}) }
+    delete nextPointsMap[userId]
+    this.setData({ fullList: newFullList, list: newList, newPointsMap: nextPointsMap })
+  },
+
+  async onDeleteMember(e) {
+    const userId = e.currentTarget.dataset.userId
+    const nickName = e.currentTarget.dataset.nickName
+    if (!userId) return
+
+    const confirmed = await new Promise((resolve) => {
+      wx.showModal({
+        title: '删除会员',
+        content: `确定删除用户 "${nickName || '未知用户'}" 吗？此操作不可恢复。`,
+        confirmText: '删除',
+        confirmColor: '#ff4d4f',
+        cancelText: '取消',
+        success: (res) => resolve(res && res.confirm === true),
+        fail: () => resolve(false)
+      })
+    })
+    if (!confirmed) return
+
+    try {
+      wx.showLoading({ title: '删除中...', mask: true })
+      const cloudEnv = app.globalData.cloudEnv || 'cloudbase-0gvjuqae479205e8'
+      const r = await wx.cloud.callFunction({
+        name: 'adminManageMembers',
+        config: { env: cloudEnv },
+        data: { action: 'deleteMember', data: { id: userId } }
+      })
+      if (!r.result || !r.result.success) throw new Error(r.result?.message || '删除失败')
+
+      this.removeLocalMember(userId)
+      this.updateCounts()
+      wx.showToast({ title: '已删除', icon: 'success' })
+    } catch (err) {
+      console.error('删除会员失败', err)
+      wx.showToast({ title: err.message || '删除失败', icon: 'none' })
+    } finally {
+      wx.hideLoading()
+    }
   },
 
   onExportData() {

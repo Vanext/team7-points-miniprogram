@@ -293,6 +293,11 @@ page {
   color: #007aff;
 }
 
+.act-btn.copy {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
 .act-btn.del {
   background: #fff1f0;
   color: #ff4d4f;

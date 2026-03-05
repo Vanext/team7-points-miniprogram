@@ -138,6 +138,10 @@
             <text class="label">详细内容</text>
             <textarea class="textarea" placeholder="请输入详细内容" value="{{tbForm.content}}" bindinput="tbInputContent"/>
           </view>
+          <view class="form-item">
+            <text class="label">接龙人数上限</text>
+            <input class="input" type="number" placeholder="默认20" value="{{tbForm.maxParticipants}}" bindinput="tbInputMaxParticipants"/>
+          </view>
           <view class="form-item flex-row">
              <text class="label">首页展示</text>
              <switch checked="{{tbForm.showOnHome}}" bindchange="tbSwitchShowOnHome" color="#1677ff"/>

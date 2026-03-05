@@ -27,5 +27,18 @@ Page({
       }
       this.setData({ logoUrl, swimUrl, bikeUrl, runUrl })
     } catch (_) {}
+  },
+
+  onShareAppMessage() {
+    return {
+      title: 'IRONMAN 70.3 横琴赛道详情与参赛指导',
+      path: '/pages/camp/course/course'
+    }
+  },
+
+  onShareTimeline() {
+    return {
+      title: 'IRONMAN 70.3 横琴赛道详情与参赛指导'
+    }
   }
 })

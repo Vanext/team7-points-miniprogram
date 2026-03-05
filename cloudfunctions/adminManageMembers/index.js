@@ -74,11 +74,11 @@ exports.main = async (event, context) => {
       let queryRef = coll.where(where)
       
       if (sortField === 'nickName') {
-         // 按昵称排序
-         queryRef = queryRef.orderBy('nickName', sortOrder).orderBy('updateTime', 'desc')
+        queryRef = queryRef.orderBy('nickName', sortOrder).orderBy('updateTime', 'desc')
+      } else if (sortField === 'joinDate' || sortField === 'createTime') {
+        queryRef = queryRef.orderBy('joinDate', sortOrder).orderBy('updateTime', 'desc')
       } else {
-         // 默认按积分
-         queryRef = queryRef.orderBy('totalPoints', sortOrder).orderBy('updateTime', 'desc')
+        queryRef = queryRef.orderBy('totalPoints', sortOrder).orderBy('updateTime', 'desc')
       }
       
       const res = await queryRef.skip(skip).limit(limit).get()
@@ -124,6 +124,45 @@ exports.main = async (event, context) => {
       })
 
       return { success: true, data: normalized }
+    }
+
+    if (action === 'deleteMember') {
+      const { id } = data
+      if (!id) throw new Error('缺少用户ID')
+      if (adminUser && adminUser._id && String(adminUser._id) === String(id)) {
+        throw new Error('不能删除当前登录管理员')
+      }
+
+      await ensureCollections(['exchange_records', 'notifications', 'camp_applications', 'camp_user_progress'])
+
+      const userDoc = await db.collection('users').doc(id).get()
+      const u = userDoc && userDoc.data
+      if (!u) throw new Error('用户不存在')
+      const targetOpenid = u._openid
+      if (!targetOpenid) throw new Error('用户openid缺失')
+
+      const removeByWhere = async (collName, where) => {
+        let removed = 0
+        while (true) {
+          const r = await db.collection(collName).where(where).limit(100).get()
+          const ids = (r.data || []).map(it => it && it._id).filter(Boolean)
+          if (!ids.length) break
+          await Promise.all(ids.map(docId => db.collection(collName).doc(docId).remove()))
+          removed += ids.length
+          if (ids.length < 100) break
+        }
+        return removed
+      }
+
+      const stats = {}
+      stats.point_records = await removeByWhere('point_records', { _openid: targetOpenid })
+      stats.exchange_records = await removeByWhere('exchange_records', { _openid: targetOpenid })
+      stats.notifications = await removeByWhere('notifications', { _openid: targetOpenid })
+      stats.camp_applications = await removeByWhere('camp_applications', { _openid: targetOpenid })
+      stats.camp_user_progress = await removeByWhere('camp_user_progress', { _openid: targetOpenid })
+
+      await db.collection('users').doc(id).remove()
+      return { success: true, data: stats }
     }
 
     if (action === 'normalizeMembership') {

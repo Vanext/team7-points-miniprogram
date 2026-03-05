@@ -1,0 +1,38 @@
+<view class="container">
+  <view class="header">
+    <view class="title">报名列表 ({{total}})</view>
+    <button class="export-btn" bindtap="exportCSV" size="mini">导出CSV</button>
+  </view>
+  
+  <scroll-view scroll-y="true" class="list-container" bindscrolltolower="loadMore">
+    <block wx:for="{{list}}" wx:key="_id">
+      <view class="card">
+        <view class="row header-row">
+          <text class="name">{{item.name}} ({{item.gender}})</text>
+          <text class="time">{{item.createTime}}</text>
+        </view>
+        <view class="row">
+          <text class="label">年龄/身高:</text>
+          <text class="value">{{item.age}}岁 / {{item.height}}cm</text>
+        </view>
+        <view class="row">
+          <text class="label">保险:</text>
+          <text class="value">{{item.hasInsurance}}</text>
+        </view>
+        <view class="row">
+          <text class="label">联系人:</text>
+          <text class="value">{{item.contactPerson}} ({{item.contactPhone}})</text>
+        </view>
+        <view class="row days-row">
+          <text class="label">参加日期:</text>
+          <view class="days-list">{{item.days}}</view>
+        </view>
+        <view class="action-row">
+          <button class="delete-btn" size="mini" bindtap="onDelete" data-id="{{item._id}}" data-name="{{item.name}}">删除</button>
+        </view>
+      </view>
+    </block>
+    <view wx:if="{{loading}}" class="loading">加载中...</view>
+    <view wx:if="{{!loading && list.length === 0}}" class="empty">暂无数据</view>
+  </scroll-view>
+</view>

@@ -29,7 +29,7 @@ function parseGenderSizeFields(inputGender, inputSize, inputSizeText) {
   const sizeText = (typeof inputSizeText === 'string') ? inputSizeText : ''
 
   if ((!gender || !size) && sizeText) {
-    const m = sizeText.match(/^([男女])[- ]?(.*)$/)
+    const m = sizeText.match(/^([男女]|儿童)[- ]?(.*)$/)
     if (m) {
       gender = gender || m[1]
       size = size || (m[2] || '')
@@ -37,7 +37,7 @@ function parseGenderSizeFields(inputGender, inputSize, inputSizeText) {
   }
 
   if (!gender && typeof size === 'string') {
-    const m = size.match(/^([男女])[- ]?(.*)$/)
+    const m = size.match(/^([男女]|儿童)[- ]?(.*)$/)
     if (m) {
       gender = m[1]
       size = m[2] || ''
@@ -58,14 +58,14 @@ exports.main = async (event, context) => {
     if (action === 'create') {
       const parsed = parseGenderSizeFields(data.gender, data.size, data.sizeText)
       const doc = {
-        name: sanitizeText(data.name, 50),
+        name: sanitizeText(data.name || data.recipientName, 50),
         category: sanitizeText(data.category, 50),
         gender: sanitizeText(parsed.gender, 10),
         size: sanitizeText(parsed.size, 20),
-        mobile: sanitizeText(data.mobile, 20),
+        mobile: sanitizeText(data.mobile || data.recipientMobile, 20),
         ordered: !!data.ordered,
         shipped: !!data.shipped,
-        address: sanitizeText(data.address, 200),
+        address: sanitizeText(data.address || data.recipientAddress, 200),
         remark: sanitizeText(data.remark, 200),
         createdAt: nowServerDate(),
         updatedAt: nowServerDate(),
@@ -82,13 +82,16 @@ exports.main = async (event, context) => {
       const dataList = (res.data || []).map(doc => ({
         _id: doc._id,
         name: doc.name || doc.recipientName || '',
+        recipientName: doc.name || doc.recipientName || '',
         category: doc.category || '',
         gender: doc.gender || '',
         size: doc.size || '',
-        mobile: doc.mobile || '',
+        mobile: doc.mobile || doc.recipientMobile || '',
+        recipientMobile: doc.mobile || doc.recipientMobile || '',
         ordered: typeof doc.ordered === 'boolean' ? doc.ordered : false,
         shipped: typeof doc.shipped === 'boolean' ? doc.shipped : false,
-        address: doc.address || '',
+        address: doc.address || doc.recipientAddress || '',
+        recipientAddress: doc.address || doc.recipientAddress || '',
         remark: doc.remark || ''
       }))
       return { success: true, data: dataList }
@@ -103,6 +106,9 @@ exports.main = async (event, context) => {
       }
       if (Object.prototype.hasOwnProperty.call(data, 'name')) {
         patch.name = sanitizeText(data.name, 50)
+      }
+      if (Object.prototype.hasOwnProperty.call(data, 'recipientName')) {
+        patch.name = sanitizeText(data.recipientName, 50)
       }
       if (Object.prototype.hasOwnProperty.call(data, 'category')) {
         patch.category = sanitizeText(data.category, 50)
@@ -121,6 +127,9 @@ exports.main = async (event, context) => {
       if (Object.prototype.hasOwnProperty.call(data, 'mobile')) {
         patch.mobile = sanitizeText(data.mobile, 20)
       }
+      if (Object.prototype.hasOwnProperty.call(data, 'recipientMobile')) {
+        patch.mobile = sanitizeText(data.recipientMobile, 20)
+      }
       if (Object.prototype.hasOwnProperty.call(data, 'ordered')) {
         patch.ordered = !!data.ordered
       }
@@ -129,6 +138,9 @@ exports.main = async (event, context) => {
       }
       if (Object.prototype.hasOwnProperty.call(data, 'address')) {
         patch.address = sanitizeText(data.address, 200)
+      }
+      if (Object.prototype.hasOwnProperty.call(data, 'recipientAddress')) {
+        patch.address = sanitizeText(data.recipientAddress, 200)
       }
       if (Object.prototype.hasOwnProperty.call(data, 'remark')) {
         patch.remark = sanitizeText(data.remark, 200)

@@ -29,11 +29,23 @@
     </view>
   </view>
 
+  <!-- Banner -->
+  <view class="camp-section" wx:if="{{false}}">
+    <!-- Youth Training Recruitment Card -->
+    <view class="camp-card youth-card" bindtap="openYouthModal" style="margin-top: 0; background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);">
+      <view class="camp-row">
+        <text class="camp-icon">🚴</text>
+        <text class="camp-title">Team7青少年骑跑训练招募</text>
+      </view>
+      <text class="camp-subtitle">立即报名</text>
+    </view>
+  </view>
+
   <!-- Menu Grid -->
   <view class="action-grid">
     <view class="action-item" bindtap="navigateToUpload">
       <image class="action-icon-img" src="/images/icon-upload.png" wx:if="{{false}}"></image>
-      <view class="action-icon" wx:else>📤</view>
+      <view class="action-icon" wx:else>📷</view>
       <text class="action-text">上传打卡</text>
     </view>
     <view class="action-item" bindtap="navigateToStore">
@@ -87,25 +99,30 @@
   <!-- Training Bulletins Carousel -->
   <view class="card bulletin-card" wx:if="{{bulletins.length > 0}}">
     <view class="bulletin-header">
-      <text class="bulletin-title">训练通告</text>
+      <text class="bulletin-title">{{(bulletins[currentBulletinIndex] && bulletins[currentBulletinIndex].title) || '训练通告'}}</text>
     </view>
-    <swiper autoplay="true" interval="5000" circular="true" indicator-dots="true">
+    <swiper class="bulletin-swiper" autoplay="true" interval="5000" circular="true" indicator-dots="true" bindchange="onBulletinSwiperChange" style="height: {{bulletinSwiperHeight}}px;">
       <block wx:for="{{bulletins}}" wx:key="_id">
         <swiper-item>
-          <view>
+          <view id="bulletin-slide-{{item._id}}" class="bulletin-slide">
             <view class="bulletin-subheader">
               <text class="bulletin-time">{{item.time}}</text>
               <text class="bulletin-sep">·</text>
               <text class="bulletin-location">{{item.location}}</text>
             </view>
-            <view class="bulletin-content">{{item.content}}</view>
+            <view class="bulletin-content-box">
+              <text class="bulletin-content">{{item.content}}</text>
+            </view>
             <view class="bulletin-actions">
               <view class="join-btn" data-id="{{item._id}}" bindtap="toggleJoinBulletin">{{joinedMap[item._id] ? '取消' : '接龙'}}</view>
-              <scroll-view class="participants-inline" scroll-x="true">
-                <block wx:for="{{item.participants}}" wx:key="openid" wx:for-item="p">
-                  <text class="participant-chip">{{p.nickName || '微信用户'}}</text>
-                </block>
-              </scroll-view>
+              <view class="participants-area">
+                <view class="participants-wrap" wx:if="{{item.participants && item.participants.length > 0}}">
+                  <block wx:for="{{item.participants}}" wx:key="openid" wx:for-item="p">
+                    <view class="participant-tag">{{p.nickName}}</view>
+                  </block>
+                </view>
+                <text class="participants-empty" wx:else>暂无接龙</text>
+              </view>
             </view>
           </view>
         </swiper-item>
@@ -113,7 +130,7 @@
     </swiper>
   </view>
 
-  <!-- Banner -->
+  <!-- Ironman Camp Card -->
   <view class="camp-section">
     <view class="camp-card" bindtap="onJoinCamp">
       <view class="camp-row">
@@ -123,6 +140,90 @@
       <text class="camp-subtitle">{{campStatus === 'approved' ? '立即加入' : '申请入营'}}</text>
     </view>
   </view>
+
+  <!-- Youth Training Modal -->
+  <wxs module="util">
+  function includes(arr, val) {
+    return arr.indexOf(val) > -1;
+  }
+  module.exports.includes = includes;
+  </wxs>
+  <view class="modal-mask" wx:if="{{showYouthModal}}" bindtap="closeYouthModal"></view>
+  <view class="modal-container" wx:if="{{showYouthModal}}">
+    <view class="modal-header">
+      <text class="modal-title">青少年骑跑训练报名</text>
+      <view class="modal-close" bindtap="closeYouthModal">✕</view>
+    </view>
+    <scroll-view scroll-y="true" class="modal-content">
+      <view class="info-section">
+        <view class="info-row"><text class="info-label">时间：</text><text class="info-val">2月6日-2月14日</text></view>
+        <view class="info-row"><text class="info-label">训练时间：</text><text class="info-val">早9点-11点30</text></view>
+        <view class="info-row"><text class="info-label">地点：</text><text class="info-val">渝中区滨江路</text></view>
+        <view class="info-row"><text class="info-label">费用：</text><text class="info-val">单次140/人，5天起缴</text></view>
+      </view>
+      
+      <view class="form-group">
+        <view class="form-item">
+          <text class="form-label">姓名</text>
+          <input class="form-input" placeholder="请输入姓名" value="{{youthForm.name}}" data-field="name" bindinput="onYouthInput" />
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">性别</text>
+          <picker range="{{genderOptions}}" bindchange="onGenderChange">
+            <view class="picker-view {{youthForm.gender ? '' : 'placeholder'}}">
+              {{youthForm.gender || '请选择性别'}}
+            </view>
+          </picker>
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">年龄</text>
+          <input class="form-input" type="number" placeholder="请输入年龄" value="{{youthForm.age}}" data-field="age" bindinput="onYouthInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">身高(cm)</text>
+          <input class="form-input" type="number" placeholder="请输入身高" value="{{youthForm.height}}" data-field="height" bindinput="onYouthInput" />
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">是否自带意外险</text>
+          <picker range="{{insuranceOptions}}" bindchange="onInsuranceChange">
+            <view class="picker-view {{youthForm.hasInsurance ? '' : 'placeholder'}}">
+              {{youthForm.hasInsurance || '请选择'}}
+            </view>
+          </picker>
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">参加日期（可多选）</text>
+          <view class="date-grid">
+            <block wx:for="{{availableDates}}" wx:key="id">
+              <view class="date-item {{util.includes(youthForm.days, item.date) ? 'selected' : ''}}" 
+                    bindtap="toggleDateSelection" 
+                    data-date="{{item.date}}">
+                {{item.date}}
+              </view>
+            </block>
+          </view>
+          <view class="selected-days-tip" wx:if="{{youthForm.days.length}}">已选：{{youthForm.days.length}}天</view>
+        </view>
+
+        <view class="form-item">
+          <text class="form-label">联系人</text>
+          <input class="form-input" placeholder="请输入联系人姓名" value="{{youthForm.contactPerson}}" data-field="contactPerson" bindinput="onYouthInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">联系电话</text>
+          <input class="form-input" type="number" placeholder="请输入联系电话" value="{{youthForm.contactPhone}}" data-field="contactPhone" bindinput="onYouthInput" />
+        </view>
+      </view>
+    </scroll-view>
+    <view class="modal-footer">
+      <button class="submit-btn" bindtap="submitYouthForm" loading="{{youthSubmitting}}">提交报名</button>
+    </view>
+  </view>
+
 
   
 

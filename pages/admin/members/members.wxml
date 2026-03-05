@@ -25,6 +25,7 @@
       
       <view class="filter-row">
         <view class="sort-group">
+          <view class="sort-item {{sortBy==='joinDate'?'active':''}}" bindtap="onSortByJoinDate">按注册</view>
           <view class="sort-item {{sortBy==='points'?'active':''}}" bindtap="onSortByPoints">按积分</view>
           <view class="sort-item {{sortBy==='name'?'active':''}}" bindtap="onSortByName">按姓名</view>
         </view>
@@ -52,6 +53,7 @@
                 <view class="tags-row">
                   <!-- 文本标签，清晰易懂 -->
                   <text class="tag admin" wx:if="{{item.isAdmin}}">管理员</text>
+                  <text class="tag" wx:if="{{item.registerDateText}}">注册 {{item.registerDateText}}</text>
                   <text class="tag official" wx:if="{{item.isOfficialMember}}">正式会员</text>
                   <text class="tag paid" wx:if="{{item.isOfficialMember && item.officialMemberUntilText}}">到期 {{item.officialMemberUntilText}}</text>
                   <text class="tag guest" wx:if="{{!item.isOfficialMember}}">普通用户</text>
@@ -91,6 +93,9 @@
                 </view>
                 <view class="btn-text {{item.exchange_locked ? 'danger' : ''}}" catchtap="toggleExchangeLock" data-user-id="{{item._id}}" data-is-locked="{{item.exchange_locked}}" data-nick-name="{{item.nickName}}" wx:if="{{item.isOfficialMember}}">
                   {{item.exchange_locked ? '解锁' : '锁定'}}
+                </view>
+                <view class="btn-text danger" catchtap="onDeleteMember" data-user-id="{{item._id}}" data-nick-name="{{item.nickName}}">
+                  删除
                 </view>
               </view>
             </view>

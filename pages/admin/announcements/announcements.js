@@ -31,7 +31,7 @@ Page({
       content: '', 
       isActive: true, 
       showOnHome: true, // 默认首页展示
-      maxParticipants: 0, 
+      maxParticipants: 20, 
       reminderTemplateId: '' 
     }
   },
@@ -335,6 +335,8 @@ Page({
   tbEdit(e){
     const item = e.currentTarget.dataset.item
     if (!item) return
+    const mp = Number(item.maxParticipants)
+    const normalizedMax = (Number.isFinite(mp) && mp > 0) ? mp : 20
     this.setData({ 
       tbForm: { // 修正为 tbForm
         id: item._id, 
@@ -344,7 +346,7 @@ Page({
         content: item.content || '', 
         isActive: !!item.isActive, 
         showOnHome: item.showOnHome !== false,
-        maxParticipants: item.maxParticipants || 0, 
+        maxParticipants: normalizedMax, 
         reminderTemplateId: item.reminderTemplateId || '' 
       }, 
       tbShowCreateForm: true 
@@ -364,6 +366,11 @@ Page({
   tbInputContent(e) {
     this.setData({ 'tbForm.content': e.detail.value })
   },
+  tbInputMaxParticipants(e) {
+    const raw = (e && e.detail && e.detail.value) ? String(e.detail.value) : ''
+    const cleaned = raw.replace(/[^0-9]/g, '')
+    this.setData({ 'tbForm.maxParticipants': cleaned })
+  },
   tbSwitchShowOnHome(e) {
     this.setData({ 'tbForm.showOnHome': e.detail.value })
   },
@@ -374,14 +381,14 @@ Page({
   
   tbNew(){
     this.setData({ 
-      tbForm: { id: '', title: '', date: '', location: '', content: '', isActive: true, showOnHome: true, maxParticipants: 0, reminderTemplateId: '' }, 
+      tbForm: { id: '', title: '', date: '', location: '', content: '', isActive: true, showOnHome: true, maxParticipants: 20, reminderTemplateId: '' }, 
       tbShowCreateForm: true 
     })
   },
   
   tbCancel(){
     this.setData({ 
-      tbForm: { id: '', title: '', date: '', location: '', content: '', isActive: true, showOnHome: true, maxParticipants: 0, reminderTemplateId: '' }, 
+      tbForm: { id: '', title: '', date: '', location: '', content: '', isActive: true, showOnHome: true, maxParticipants: 20, reminderTemplateId: '' }, 
       tbShowCreateForm: false 
     })
   },
@@ -405,7 +412,7 @@ Page({
         content: form.content,
         isActive: form.isActive,
         showOnHome: form.showOnHome,
-        maxParticipants: Number(form.maxParticipants || 0),
+        maxParticipants: Number(form.maxParticipants || 20),
         reminderTemplateId: form.reminderTemplateId
       }
       
